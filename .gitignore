@@ -1,0 +1,6 @@
+.idea/
+.venv/
+bin/
+out/
+intel oneAPI.exe.lnk
+lbm.exe
