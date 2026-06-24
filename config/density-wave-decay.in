@@ -1,0 +1,136 @@
+! ============================================================
+! Density Wave Decay experiments
+! ============================================================
+
+
+! -------------------------------------------------- !
+! Amplitude decay for multiple relaxation parameters !
+! -------------------------------------------------- !
+&experiment
+    cfg%family = "density-wave-decay"
+    cfg%name   = "dwd-amplitude-sweep"
+
+    cfg%Nx = 100
+    cfg%Ny = 100
+    cfg%Nt = 1024
+    cfg%dpy = 0.0
+    cfg%dpx = 0.0
+
+    cfg%log%type = "point"
+    cfg%log%file = "out/dwd_amp_plots.tsv"
+    cfg%log%Nf   = 256
+    cfg%log%x    = 25
+    cfg%log%y    = 50
+
+    ! rho = rho0 + eps*sin(kx*x)
+    cfg%rho%type = "sine"
+
+    cfg%rho%sine%val_0 = 1.0
+    cfg%rho%sine%eps_x = 0.01
+    cfg%rho%sine%eps_y = 0.0
+    cfg%rho%sine%mode_x = 1
+    cfg%rho%sine%mode_y = 0
+    cfg%rho%sine%nx = 1
+    cfg%rho%sine%ny = 0
+
+    cfg%ux%type = "constant"
+    cfg%ux%const%value = 0.0
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list(1) = "periodic"
+    cfg%bc_places(1) = 255
+
+    cfg%No = 7
+    cfg%omegas = 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75
+
+    cfg%disp_x = "t"
+    cfg%disp_y = "rho"
+/
+
+
+! ---------------------------- !
+! Full density field animation !
+! ---------------------------- !
+&experiment
+    cfg%family = "density-wave-decay"
+    cfg%name   = "dwd-field-animation"
+
+    cfg%Nx = 32
+    cfg%Ny = 32
+    cfg%Nt = 1024
+    cfg%dpy = 0.0
+    cfg%dpx = 0.0
+
+    cfg%log%type = "field"
+    cfg%log%file = "out/dwd_fld_anim.tsv"
+    cfg%log%Nf   = 1024
+
+    cfg%rho%type = "sine"
+    cfg%rho%sine%val_0 = 1.0
+    cfg%rho%sine%eps_x = 0.01
+    cfg%rho%sine%eps_y = 0.0
+    cfg%rho%sine%mode_x = 1
+    cfg%rho%sine%mode_y = 0
+    cfg%rho%sine%nx = 1
+    cfg%rho%sine%ny = 0
+
+    cfg%ux%type = "constant"
+    cfg%ux%const%value = 0.0
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list(1) = "periodic"
+    cfg%bc_places(1) = 255
+
+    cfg%No = 1
+    cfg%omegas = 1.0
+/
+
+
+! ------------------------- !
+! Density profile snapshots !
+! ------------------------- !
+&experiment
+    cfg%family = "density-wave-decay"
+    cfg%name   = "dwd-profile-plots"
+
+    cfg%Nx = 128
+    cfg%Ny = 128
+    cfg%Nt = 1024
+    cfg%dpy = 0.0
+    cfg%dpx = 0.0
+
+    cfg%log%type = "profile_x"
+    cfg%log%file = "out/dwd_prf_plots.tsv"
+    cfg%log%Nf = 5
+    cfg%log%y = 64
+
+    cfg%rho%type = "sine"
+    cfg%rho%sine%val_0 = 1.0
+    cfg%rho%sine%eps_x = 0.01
+    cfg%rho%sine%eps_y = 0.0
+    cfg%rho%sine%mode_x = 1
+    cfg%rho%sine%mode_y = 0
+    cfg%rho%sine%nx = 1
+    cfg%rho%sine%ny = 0
+
+    cfg%ux%type = "constant"
+    cfg%ux%const%value = 0.0
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list(1) = "periodic"
+    cfg%bc_places(1) = 255
+
+    cfg%No = 1
+    cfg%omegas = 1.0
+
+    cfg%disp_x = "x"
+    cfg%disp_y = "rho"
+/

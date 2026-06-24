@@ -1,25 +1,16 @@
 module lbm_simulation
+	use lbm_d2q9_boundry_conditions
 	use lbm_d2q9_consts
 	use lbm_d2q9_solver
-	use lbm_d2q9_boundry_conditions
+	use lbm_d2q9_types
 
 	implicit none
 	private
 
     public :: init_simulation
     public :: run_simulation
-	public :: logger_func
 
-	abstract interface
-		subroutine logger_func(log_unit, t)
-			integer, intent(in) :: log_unit, t
-		end subroutine logger_func
-	end interface
-
-    real(dp) :: omega
-
-	character(:), allocatable :: filename
-	procedure(logger_func), pointer :: logger => null()
+	class(logger), allocatable :: log
 	logical :: logging_enabled = .false.
 
 contains
@@ -31,38 +22,34 @@ contains
 			logging_enabled         &
 			.and. (log_step > 0)    &
 			.and. (mod(t, log_step) == 0)
-	end function is_logging_step
+	end function
 
 
     subroutine init_simulation( &
         grid_size_y,    &
         grid_size_x,    &
-        set_omega,      &
-        rho_func,       &
-        uy_func,        &
-        ux_func,        &
-        set_logger,     &
-        set_filename    &
+        rho,            &
+        uy,             &
+        ux,             &
+	    omega,          &
+	    dpy,            &
+	    dpx,            &
+	    bc_list,        &
+        bc_count,       &
+        set_logger      &
     )
-	    integer, intent(in) :: grid_size_y, grid_size_x
-	    real(dp), intent(in) :: set_omega
-		procedure(scalar_field) :: rho_func, uy_func, ux_func
-	    procedure(logger_func), pointer, optional :: set_logger
-	    character(*), intent(in), optional :: set_filename
+	    integer, intent(in) :: grid_size_y, grid_size_x, bc_count
+		class(scalar_field), intent(in) :: rho, uy, ux
+	    real(dp), intent(in) :: omega, dpy, dpx
+	    type(boundry_condition), intent(in) :: bc_list(*)
+	    class(logger), intent(in), optional :: set_logger
 
-	    nullify(logger)
-		if (allocated(filename)) deallocate(filename)
+	    logging_enabled = present(set_logger)
+	    if (logging_enabled) log = set_logger
 
-	    if (present(set_filename)) filename = set_filename
-	    if (present(set_logger)) logger => set_logger
-
-	    omega = set_omega
-	    logging_enabled = associated(logger) .and. allocated(filename)
-
-        call init_lbm(1, 1, grid_size_y, grid_size_x, 1.0_dp)
-        call set_initial_condition(rho_func, uy_func, ux_func)
-	    call clear_boundry_conditions()
-    end subroutine init_simulation
+        call init_lbm(grid_size_y, grid_size_x, omega, dpy, dpx, bc_list, bc_count)
+        call set_initial_condition(rho, uy, ux)
+    end subroutine
 
 
     subroutine run_simulation(Nt, log_step)
@@ -71,22 +58,22 @@ contains
 
         if (logging_enabled) open(   &
             newunit  = log_unit,     &
-            file     = filename,     &
+            file     = log%file,     &
             status   = 'unknown',    &
             position = 'append'      &
         )
 
-        do t = 0, Nt-1
+        do t = 0, Nt
             if (is_logging_step(t, log_step)) then
-                call logger(log_unit, t)
+                call log%log(log_unit, t)
             end if
 
-            call collision_step(omega)
             call streaming_step()
             call communication_step()
+            call collision_step()
         end do
 
         if (logging_enabled) close(log_unit)
-    end subroutine run_simulation
+    end subroutine
 
 end module lbm_simulation

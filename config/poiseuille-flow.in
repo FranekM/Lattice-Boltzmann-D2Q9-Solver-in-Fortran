@@ -1,0 +1,81 @@
+! ============================================================
+! Poiseuille Flow experiments
+! ============================================================
+
+
+! -------------------------!
+! Velocity field animation !
+! -------------------------!
+&experiment
+    cfg%family = "poiseuille-flow"
+    cfg%name   = "pf-field-animation"
+
+    cfg%Nx = 64
+    cfg%Ny = 64
+    cfg%Nt = 2048
+    cfg%dpx = 0.01
+    cfg%dpy = 0.0
+
+    cfg%log%type = "field"
+    cfg%log%file = "out/pf_field.tsv"
+    cfg%log%Nf = 512
+
+    cfg%rho%type = "constant"
+    cfg%rho%const%value = 1.0
+
+    cfg%ux%type = "constant"
+    cfg%ux%const%value = 0.0
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 2
+    cfg%bc_list(1) = "periodic"
+    cfg%bc_places(1) = 5
+    cfg%bc_list(2) = "bounce_back"
+    cfg%bc_places(2) = 10
+
+    cfg%No = 1
+    cfg%omegas = 1.0
+/
+
+
+! ---------------- !
+! Velocity profile !
+! ---------------- !
+&experiment
+    cfg%family = "poiseuille-flow"
+    cfg%name   = "pf-profile"
+
+    cfg%Nx = 128
+    cfg%Ny = 128
+    cfg%Nt = 65536
+    cfg%dpx = 0.01
+    cfg%dpy = 0.0
+
+    cfg%log%type = "profile_y"
+    cfg%log%file = "out/pf_profile.tsv"
+    cfg%log%Nf = 5
+    cfg%log%x = 16
+
+    cfg%rho%type = "constant"
+    cfg%rho%const%value = 1.0
+
+    cfg%ux%type = "constant"
+    cfg%ux%const%value = 0.0
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 2
+    cfg%bc_list(1) = "periodic"
+    cfg%bc_places(1) = 5
+    cfg%bc_list(2) = "bounce_back"
+    cfg%bc_places(2) = 10
+
+    cfg%No = 1
+    cfg%omegas = 1.0
+
+    cfg%disp_x = "x" ! sic!
+    cfg%disp_y = "ux"
+/

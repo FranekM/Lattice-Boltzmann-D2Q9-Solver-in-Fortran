@@ -1,0 +1,205 @@
+! ============================================================
+! Shear Wave Decay experiments
+! ============================================================
+
+
+! -------------------------------------------------- !
+! Amplitude decay for multiple relaxation parameters !
+! -------------------------------------------------- !
+&experiment
+    cfg%family = "shear-wave-decay"
+    cfg%name   = "swd-amplitude-sweep"
+
+    cfg%Nx = 100
+    cfg%Ny = 100
+    cfg%Nt = 1024
+    cfg%dpy = 0.0
+    cfg%dpx = 0.0
+
+    cfg%log%type = "point"
+    cfg%log%file = "out/swd_amp_plots.tsv"
+    cfg%log%Nf   = 256
+    cfg%log%x    = 50
+    cfg%log%y    = 25
+
+    cfg%rho%type = "constant"
+    cfg%rho%const%value = 1.0
+
+    cfg%ux%type = "sine"
+    cfg%ux%sine%val_0  = 0.0
+    cfg%ux%sine%eps_y  = 0.01
+    cfg%ux%sine%eps_x  = 0.0
+    cfg%ux%sine%mode_y = 1
+    cfg%ux%sine%mode_x = 0
+    cfg%ux%sine%ny     = 1
+    cfg%ux%sine%nx     = 0
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list = "periodic"
+    cfg%bc_places = 255
+
+    cfg%No = 7
+    cfg%omegas = 0.25,0.5,0.75,1.0,1.25,1.5,1.75
+
+    cfg%disp_x = "t"
+    cfg%disp_y = "ux"
+/
+
+
+! -------------------------- !
+! Viscosity estimation sweep !
+! -------------------------- !
+&experiment
+    cfg%family = "shear-wave-decay"
+    cfg%name   = "swd-viscosity-sweep"
+
+    cfg%Nx = 100
+    cfg%Ny = 100
+    cfg%Nt = 1024
+
+    cfg%log%type = "point"
+    cfg%log%file = "out/swd_vis_plots.tsv"
+    cfg%log%Nf   = 16
+    cfg%log%x    = 50
+    cfg%log%y    = 25
+
+    cfg%rho%type = "constant"
+    cfg%rho%const%value = 1.0
+
+    cfg%ux%type = "sine"
+    cfg%ux%sine%val_0 = 0.0
+    cfg%ux%sine%eps_y = 0.01
+    cfg%ux%sine%mode_y = 1
+    cfg%ux%sine%ny = 1
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list = "periodic"
+    cfg%bc_places = 255
+
+    cfg%No = 20
+    cfg%omegas = 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0
+
+    cfg%disp_x = "t"
+    cfg%disp_y = "ux"
+/
+
+
+! ----------------------------- !
+! Full velocity field animation !
+! ----------------------------- !
+&experiment
+    cfg%family = "shear-wave-decay"
+    cfg%name   = "swd-field-animation"
+
+    cfg%Nx = 32
+    cfg%Ny = 32
+    cfg%Nt = 1024
+
+    cfg%log%type = "field"
+    cfg%log%file = "out/swd_fld_anim.tsv"
+    cfg%log%Nf   = 1024
+
+    cfg%rho%type = "constant"
+    cfg%rho%const%value = 1.0
+
+    cfg%ux%type = "sine"
+    cfg%ux%sine%val_0 = 0.0
+    cfg%ux%sine%eps_y = 0.01
+    cfg%ux%sine%mode_y = 1
+    cfg%ux%sine%ny = 1
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list = "periodic"
+    cfg%bc_places = 255
+
+    cfg%No = 1
+    cfg%omegas = 1.0
+/
+
+
+! -------------------------- !
+! Velocity profile snapshots !
+! -------------------------- !
+&experiment
+    cfg%family = "shear-wave-decay"
+    cfg%name   = "swd-profile-plots"
+
+    cfg%Nx = 300
+    cfg%Ny = 300
+    cfg%Nt = 20480
+
+    cfg%log%type = "profile_y"
+    cfg%log%file = "out/swd_prf_plots.tsv"
+    cfg%log%Nf = 5
+    cfg%log%x = 64
+
+    cfg%rho%type = "constant"
+    cfg%rho%const%value = 1.0
+
+    cfg%ux%type = "sine"
+    cfg%ux%sine%val_0 = 0.0
+    cfg%ux%sine%eps_y = 0.1
+    cfg%ux%sine%mode_y = 1
+    cfg%ux%sine%ny = 1
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list = "periodic"
+    cfg%bc_places = 255
+
+    cfg%No = 1
+    cfg%omegas = 1.0
+
+    cfg%disp_x = "x"
+    cfg%disp_y = "ux"
+/
+
+! -------------------------- !
+! Velocity profile animation !
+! -------------------------- !
+&experiment
+    cfg%family = "shear-wave-decay"
+    cfg%name   = "swd-profile-animation"
+
+    cfg%Nx = 64
+    cfg%Ny = 64
+    cfg%Nt = 512
+
+    cfg%log%type = "profile_y"
+    cfg%log%file = "out/swd_prf_anim.tsv"
+    cfg%log%Nf = 512
+    cfg%log%x = 32
+
+    cfg%rho%type = "constant"
+    cfg%rho%const%value = 1.0
+
+    cfg%ux%type = "sine"
+    cfg%ux%sine%val_0 = 0.0
+    cfg%ux%sine%eps_y = 0.1
+    cfg%ux%sine%mode_y = 1
+    cfg%ux%sine%ny = 1
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list = "periodic"
+    cfg%bc_places = 255
+
+    cfg%No = 1
+    cfg%omegas = 1.0
+
+    cfg%disp_x = "x"
+    cfg%disp_y = "ux"
+/

@@ -1,69 +1,73 @@
 program LatticeBoltzmannMethod_D2Q9
     use lbm_d2q9_consts
+    use lbm_d2q9_types
     use lbm_simulation
+    use lbm_faktory
+    use lbm_loggers
+    use lbm_fields
     use lbm_config
-    use lbm_swd
-    use lbm_dwd
-    use lbm_io
+    use lbm_utils
 
     implicit none
 
-    integer :: i, o
-    integer :: log_step
+    integer :: i, j, k
     real(dp) :: omega
-    procedure(logger_func), pointer :: logger => null()
 
-    call read_configs('config.in')
+    class(logger), allocatable :: log
+    class(scalar_field), allocatable :: rho
+    class(scalar_field), allocatable :: uy
+    class(scalar_field), allocatable :: ux
+    type(boundry_condition) :: bc_list(16)
+
+    character(:), allocatable :: selected_configs(:)
+
+    call read_arguments(selected_configs)
+    call read_configs(selected_configs)
 
     do i = 1, config_count
-        print *, 'Starting experiment: ', trim(configs(i)%name)
+        if (.not. prepare_output_file(configs(i)%log%file)) cycle
 
-        if (.not. prepare_output_file(configs(i)%filename)) cycle
+        print *, 'Starting experiment: ', trim(configs(i)%name), ' from family: ', trim(configs(i)%family)
 
-        do o = 1, configs(i)%No
-            omega = configs(i)%omegas(o)
-            print *, ' - simulating with omega = ', omega
+        do j = 1, configs(i)%No
+            omega = configs(i)%omegas(j)
+            print *, ' > omega = ', omega
 
-            select case(configs(i)%type)
-                case("swd")
-                    if (configs(i)%output == "fld") logger => swd_field_logger
-                    if (configs(i)%output == "prf") logger => swd_profile_logger
-                    if (configs(i)%output == "amp") logger => swd_amplitude_logger
-                    log_step = configs(i)%Nt / configs(i)%frames
+            if (allocated(log)) deallocate(log)
+            if (allocated(rho)) deallocate(rho)
+            if (allocated(ux))  deallocate(ux)
+            if (allocated(uy))  deallocate(uy)
+            do k = 1, size(bc_list)
+                nullify(bc_list(k)%apply)
+                bc_list(k)%places = 0
+            end do
 
-                    call swd_simulate(                           &
-                        grid_size_x     = configs(i)%Nx,         &
-                        grid_size_y     = configs(i)%Ny,         &
-                        set_n           = configs(i)%n,          &
-                        set_eps         = configs(i)%eps,        &
-                        set_rho         = configs(i)%rho,        &
-                        set_omega       = omega,                 &
-                        Nt              = configs(i)%Nt,         &
-                        log_step        = log_step,              &
-                        logger          = logger,                &
-                        filename        = configs(i)%filename    &
-                    )
+            call build_logger(log, configs(i)%log%type, omega, i)
+            call build_field(rho, configs(i)%rho, i)
+            call build_field(ux, configs(i)%ux, i)
+            call build_field(uy, configs(i)%uy, i)
+            call build_bc_list(bc_list, i)
 
-                case("dwd")
-                    if (configs(i)%output == "fld") logger => dwd_field_logger
-                    if (configs(i)%output == "prf") logger => dwd_profile_logger
-                    if (configs(i)%output == "amp") logger => dwd_amplitude_logger
-                    log_step = configs(i)%Nt / configs(i)%frames
+            call init_simulation(                       &
+                grid_size_y     = configs(i)%Ny,        &
+                grid_size_x     = configs(i)%Nx,        &
+                rho             = rho,                  &
+                uy              = uy,                   &
+                ux              = ux,                   &
+                omega           = omega,                &
+                dpy             = configs(i)%dpy,       &
+                dpx             = configs(i)%dpx,       &
+                bc_list         = bc_list,              &
+                bc_count        = configs(i)%bc_count,  &
+                set_logger      = log                   &
+            )
 
-                    call dwd_simulate(                           &
-                        grid_size_x     = configs(i)%Nx,         &
-                        grid_size_y     = configs(i)%Ny,         &
-                        set_n           = configs(i)%n,          &
-                        set_eps         = configs(i)%eps,        &
-                        set_rho         = configs(i)%rho,        &
-                        set_omega       = omega,                 &
-                        Nt              = configs(i)%Nt,         &
-                        log_step        = log_step,              &
-                        logger          = logger,                &
-                        filename        = configs(i)%filename    &
-                    )
-            end select
+            call run_simulation(                            &
+                Nt       = configs(i)%Nt,                   &
+                log_step = configs(i)%Nt / configs(i)%log%Nf&
+            )
         end do
+
         print *, 'Experiment: ', trim(configs(i)%name), ' finished'
     end do
 

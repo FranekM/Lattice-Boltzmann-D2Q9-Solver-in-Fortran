@@ -2,6 +2,7 @@
 !!
 module lbm_d2q9_consts
     use iso_fortran_env, only: dp => real64
+
     implicit none
 
     integer, parameter :: Nd = 2            !! number of spatial dimensions
@@ -28,43 +29,26 @@ module lbm_d2q9_consts
     integer, parameter :: S_WALL = 2        !! south wall mask for cummunication step
     integer, parameter :: E_WALL = 4        !! east wall mask for cummunication step
     integer, parameter :: N_WALL = 8        !! north wall mask for cummunication step
+    integer, parameter :: ALL_WALLS = 15    !! all walls mask
 
     integer, parameter :: SW_CORNER = 16    !! southwest corner mask for cummunication step
     integer, parameter :: SE_CORNER = 32    !! southeast corner mask for cummunication step
     integer, parameter :: NW_CORNER = 64    !! northwest corner mask for cummunication step
     integer, parameter :: NE_CORNER = 128   !! northeast corner mask for cummunication step
+    integer, parameter :: ALL_CORNERS = 240 !! all corners mask
+
+    integer, parameter :: ALL_PLACES = 255  !! all places (both walls and walls) mask
 
 
-    integer, parameter :: ALL_WALLS = W_WALL + S_WALL + E_WALL + N_WALL
-    integer, parameter :: ALL_CORNERS = SW_CORNER + SE_CORNER + NW_CORNER + NE_CORNER
-
-
-    real(dp), parameter :: PI = acos(-1.0d0) !! pi appproximation for calcuations
-
-
-    abstract interface
-        double precision function scalar_field(y, x)
-            integer, intent(in) :: y, x
-        end function scalar_field
-
-        subroutine bc_func(walls, corners)
-            integer, intent(in) :: walls, corners
-        end subroutine bc_func
-    end interface
-
-    type boundry_condition
-        procedure(bc_func), pointer, nopass :: apply => null()
-        integer :: walls = 0
-        integer :: corners = 0
-    end type boundry_condition
+    real(dp), parameter :: PI = acos(-1.0d0)    !! pi appproximation for calcuations
+    real(dp), parameter :: INIT_VAL = 999.999   !! initial lattice value (should be overriden)
 
 
     real(dp), parameter :: weights(0:8) = [                     &! weights:
-        4.0d0/9.0d0,                                            &! for stationary channel
-        1.0d0/9.0d0, 1.0d0/9.0d0, 1.0d0/9.0d0, 1.0d0/9.0d0,     &! for straight channels
-        1.0d0/36.0d0, 1.0d0/36.0d0, 1.0d0/36.0d0, 1.0d0/36.0d0  &! for diagonal channels
+        4.0d0/9.0d0,                                            &! for the rest channel
+        1.0d0/9.0d0, 1.0d0/9.0d0, 1.0d0/9.0d0, 1.0d0/9.0d0,     &! for the straight channels
+        1.0d0/36.0d0, 1.0d0/36.0d0, 1.0d0/36.0d0, 1.0d0/36.0d0  &! for the diagonal channels
     ]                                                            !! D2Q9 weights for equilibirum function
-
 
     integer, parameter :: c(0:1, 0:8) = reshape([ &
          0,  0,     &! q=0: no movment

@@ -1,17 +1,17 @@
 module lbm_utils
     use iso_fortran_env, only: output_unit
+    use lbm_d2q9_boundry_conditions
     use lbm_d2q9_consts
     use lbm_d2q9_solver
-    use lbm_d2q9_boundry_conditions
+    use lbm_d2q9_types
 
     implicit none
     private
 
     public :: debug_print
-    public :: write_vti
-    public :: log_write_vti_progress
-    public :: test_streaming_with_pbc
+    public :: prepare_output_file
     public :: test_mass_conservation
+    public :: test_streaming_pbc
 
     real(dp), parameter :: EPS = 1.0e-10
 
@@ -23,8 +23,37 @@ module lbm_utils
 
 contains
 
+    logical function prepare_output_file(filename)
+		character(*), intent(in) :: filename
+
+		logical :: exists
+		character(10) :: answer
+		integer :: unit
+
+		inquire(file=filename, exist=exists)
+
+		if (.not. exists) then
+			prepare_output_file = .true.
+			return
+		end if
+
+		print *, ' File already exists: ', trim(filename)
+		print *, ' Override? [Y/n]'
+		read(*, *) answer
+
+		if (answer == 'Y') then
+			open(newunit=unit, file=filename, status="old")
+			close(unit, status="delete")
+			prepare_output_file = .true.
+		else
+			prepare_output_file = .false.
+		end if
+
+	end function prepare_output_file
+
+
     subroutine debug_print()
-        double precision :: output(1:(N-S+1)*3, 1:(E-W+1)*3)
+        real(dp) :: output(1:(N-S+1)*3, 1:(E-W+1)*3)
         integer :: lat_x, lat_y     ! lattice x, y indices
         integer :: out_x, out_y     ! output  x, y indices
         integer :: qx, qy           ! for mapping q indices
@@ -46,76 +75,13 @@ contains
         end do
     end subroutine debug_print
 
-	
-    subroutine write_vti(t_step)
-        integer, intent(in) :: t_step
 
-        integer :: dim_x, dim_y ! lattice dimensions
-        integer :: x, y         ! loop indicies
-        integer :: unit         ! output file stream
-
-        double precision :: rho, ux, uy ! measured desity and volocity components
-        character(len=100) :: filename  ! filename (one file for each time step)
-
-        dim_x = (E-W)
-        dim_y = (N-S)
-
-        write(filename, '("res/lbm_",I6.6,".vti")') t_step
-
-        open(newunit=unit, file=filename, status='replace')
-
-        write(unit, '(A)')			'<?xml version="1.0"?>'
-        write(unit, '(A)')			'<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian">'
-        write(unit, '(A,I0,A,I0,A)')	'<ImageData WholeExtent="0 ',dim_x,' 0 ',dim_y,' 0 0" Origin="0 0 0" Spacing="1 1 1">'
-        write(unit, '(A,I0,A,I0,A)')		'<Piece Extent="0 ',dim_x,' 0 ',dim_y,' 0 0">'
-        write(unit, '(A)')						'<PointData Scalars="rho" Vectors="velocity">'
-
-        write(unit, '(A)')							'<DataArray type="Float64" Name="rho" format="ascii">'
-        do y = S, N
-            do x = W, E
-                rho = measure_rho(y, x)
-                write(unit, *)							rho
-            enddo
-        enddo
-        write(unit, '(A)')							'</DataArray>'
-        write(unit, '(A)')							'<DataArray type="Float64" Name="velocity" NumberOfComponents="3" format="ascii">'
-        do y = S, N
-            do x = W, E
-                rho = measure_rho(y, x)
-                ux  = measure_u(CX, y, x, rho)
-                uy  = measure_u(CY, y, x, rho)
-                write(unit, *)           				ux, uy, 0.0d0
-            enddo
-        enddo
-        write(unit, '(A)')							'</DataArray>'
-        write(unit, '(A)')						'</PointData>'
-        write(unit, '(A)')					'</Piece>'
-        write(unit, '(A)')				'</ImageData>'
-        write(unit, '(A)')			'</VTKFile>'
-
-        close(unit)
-
-    end subroutine
-
-
-    subroutine log_write_vti_progress(t, Nt)
-        integer, intent(in) :: t, Nt
-
-        write(output_unit, '(A,I0,A,I0,A,F5.1,A)', advance='no') &
-            achar(13), t, '/', Nt, ' frames ready (', real(t)/real(Nt) * 100.0, '%)'
-        flush(output_unit)
-    end subroutine log_write_vti_progress
-
-
-    logical function test_streaming_with_pbc(Nt) result(r)
+    logical function test_streaming_pbc(Nt) result(r)
         integer, intent(in) :: Nt   ! test max time steps
         real(dp) old_mass           ! mass before streaming step
         integer :: x, y, t, q       ! loop indicies
-        integer :: dim_x, dim_y     ! lattice dimensions
 
-        dim_x = (E-W) + 1
-        dim_y = (N-S) + 1
-
+        ! requires that the lbm is already initilized
         ! initial condition: zero whole lattice
         ! set unique indetifiers only for channels at position (S, W)
         lattice = 0.0_dp
@@ -123,8 +89,6 @@ contains
         do q = 0, Nq-1
             lattice(q, S, W) = dble(q+1)
         end do
-        call clear_boundry_conditions()
-        call add_boundry_condition(periodic_bc, ALL_WALLS, ALL_CORNERS)
 
         ! main time loop
         do t = 1, Nt
@@ -144,8 +108,8 @@ contains
             ! chanels should be stream along c directions
             ! and periodic boundry condition should apply
             do q = 0, Nq-1
-                y = S + modulo(t * c(CY, q), dim_y)
-                x = W + modulo(t * c(CX, q), dim_x)
+                y = S + modulo(t * c(CY, q), Ny)
+                x = W + modulo(t * c(CX, q), Nx)
                 if (abs(lattice(q, y, x) - dble(q+1)) > EPS) then
                     r = .false. ! test failed
                     return
@@ -154,7 +118,7 @@ contains
         end do
 
         r = .true.  ! test passsed
-    end function test_streaming_with_pbc
+    end function test_streaming_pbc
 
 
     logical function test_mass_conservation(Nt) result(r)
