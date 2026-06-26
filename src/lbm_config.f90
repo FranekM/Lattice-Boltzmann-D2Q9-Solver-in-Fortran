@@ -76,6 +76,7 @@ module lbm_config
         ! boundry conditions
         character(32) :: bc_list(16) = ""
         integer :: bc_places(16) = 0
+        real(dp) :: bc_speed(16) = 0.0_dp
         integer :: bc_count = 0
 
         ! omegas

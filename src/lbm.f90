@@ -25,9 +25,9 @@ program LatticeBoltzmannMethod_D2Q9
     call read_configs(selected_configs)
 
     do i = 1, config_count
-        if (.not. prepare_output_file(configs(i)%log%file)) cycle
-
         print *, 'Starting experiment: ', trim(configs(i)%name), ' from family: ', trim(configs(i)%family)
+
+        if (.not. prepare_output_file(configs(i)%log%file)) cycle
 
         do j = 1, configs(i)%No
             omega = configs(i)%omegas(j)
@@ -40,6 +40,7 @@ program LatticeBoltzmannMethod_D2Q9
             do k = 1, size(bc_list)
                 nullify(bc_list(k)%apply)
                 bc_list(k)%places = 0
+                bc_list(k)%speed = 0
             end do
 
             call build_logger(log, configs(i)%log%type, omega, i)
@@ -68,7 +69,7 @@ program LatticeBoltzmannMethod_D2Q9
             )
         end do
 
-        print *, 'Experiment: ', trim(configs(i)%name), ' finished'
+        print *, 'Experiment: ', trim(configs(i)%name), ' finished', char(10)
     end do
 
 end program LatticeBoltzmannMethod_D2Q9

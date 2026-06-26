@@ -4,7 +4,8 @@ from plots import *
 swd_show = False
 dwd_show = False
 hbc_show = False
-pf_show = True
+pf_show = False
+cf_show = True
 
 
 if swd_show: # shear wave decay
@@ -49,6 +50,16 @@ if pf_show: # poiseuille flow
     field_animation(config, 4, 0.005)
 
     config = configs['pf-profile']
+    profile_plot(config)
+
+
+if cf_show: # couette flow
+    configs = init('couette-flow')
+
+    config = configs['cf-field-animation']
+    field_animation(config, 4, 5.0)
+
+    config = configs['cf-profile']
     profile_plot(config)
 
 

@@ -99,8 +99,12 @@ contains
                 case ("periodic")
                     bc_list(j)%apply => periodic_bc
 
+	            case ("moving_wall")
+					bc_list(j)%apply => moving_wall_bc
+
             end select
             bc_list(j)%places = configs(i)%bc_places(j)
+			bc_list(j)%speed = configs(i)%bc_speed(j)
         end do
 	end subroutine
 

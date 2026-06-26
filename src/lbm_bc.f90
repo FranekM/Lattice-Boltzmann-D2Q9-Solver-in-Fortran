@@ -8,6 +8,7 @@ module lbm_d2q9_boundry_conditions
 
 	public :: periodic_bc
 	public :: bounce_back_bc
+	public :: moving_wall_bc
 	public :: flow_bc
 	public :: make_bc
 
@@ -17,30 +18,33 @@ contains
         integer, intent(in) :: xs, x
         logical :: m
         m = iand(xs, x) /= 0
-    end function mask
+    end function
 
 
-	function make_bc(func, places) result(bc)
+	function offset(rho_w, u_w, ci, q) result(off)
+		integer, intent(in) :: ci, q
+		real(dp), intent(in) :: rho_w, u_w
+		real(dp) :: off
+
+		off = 2.0_dp * weights(q) * rho_w * c(ci, q) * u_w / cs2
+	end function
+
+
+	function make_bc(func, places, speed) result(bc)
 		procedure(bc_func), intent(in), pointer :: func
 		integer, intent(in) :: places
+		real(dp), intent(in) :: speed
 		type(boundry_condition) :: bc
 
 		bc%apply => func
 		bc%places = places
-	end function make_bc
+		bc%speed = speed
+	end function
 
 
-    subroutine periodic_bc(places)
-        integer, intent(in) :: places
-
-!        print *, "E", mask(places, E_WALL)
-!        print *, "N", mask(places, N_WALL)
-!        print *, "W", mask(places, W_WALL)
-!        print *, "S", mask(places, S_WALL)
-!        print *, "NE", mask(places, NE_CORNER)
-!        print *, "NW", mask(places, NW_CORNER)
-!        print *, "SW", mask(places, SW_CORNER)
-!        print *, "SE", mask(places, SE_CORNER)
+    subroutine periodic_bc(places, speed)
+		integer, intent(in) :: places
+		real(dp), intent(in) :: speed
 
         if (mask(places, W_WALL)) then
 	        lattice(QE,  S:N, W) = lattice(QE,  S:N, gE)
@@ -78,11 +82,12 @@ contains
         if (mask(places, SE_CORNER)) &
 			lattice(QSE, N, W) = lattice(QSE, gS, gE)
 
-    end subroutine periodic_bc
+    end subroutine
 
 
-	subroutine bounce_back_bc(places)
+	subroutine bounce_back_bc(places, speed)
 		integer, intent(in) :: places
+		real(dp), intent(in) :: speed
 
 		if (mask(places, W_WALL)) then
 			lattice(QE,  S:N,  W) = lattice(QW,  S:N,  gW)
@@ -120,10 +125,50 @@ contains
 !		if (mask(places, SE_CORNER)) &
 !	        lattice(QNW, S, E) = lattice(QSE, gS, gE)
 
-	end subroutine bounce_back_bc
+	end subroutine
 
 
-	subroutine moving_wall_bc_places
+	subroutine moving_wall_bc(places, speed)
+		integer, intent(in) :: places
+		real(dp), intent(in) :: speed
+		real(dp) :: rho_w
+		integer :: y, x
+
+		if (mask(places, W_WALL)) then
+			do y = S, N
+				rho_w = measure_rho(y, W)
+				lattice(QE, y, W) = lattice(QW, y, gW) - offset(rho_w, speed, CY, QW)
+				lattice(QNE, y, W) = lattice(QSW, y-1, gW) - offset(rho_w, speed, CY, QSW)
+				lattice(QSE, y, W) = lattice(QNW, y+1, gW) - offset(rho_w, speed, CY, QNW)
+			end do
+		end if
+
+		if (mask(places, E_WALL)) then
+			do y = S, N
+				rho_w = measure_rho(y, E)
+				lattice(QW, y, E) = lattice(QE, y, gE) - offset(rho_w, speed, CY, QE)
+				lattice(QNW, y, E) = lattice(QSE, y-1, gE) - offset(rho_w, speed, CY, QSE)
+				lattice(QSW, y, E) = lattice(QNE, y+1, gE) - offset(rho_w, speed, CY, QNE)
+			end do
+		end if
+
+		if (mask(places, S_WALL)) then
+			do x = W, E
+				rho_w = measure_rho(S, x)
+				lattice(QN, S, x) = lattice(QS, gS, x) - offset(rho_w, speed, CX, QS)
+				lattice(QNE, S, x) = lattice(QSW, gS, x-1) - offset(rho_w, speed, CX, QSW)
+				lattice(QNW, S, x) = lattice(QSE, gS, x+1) - offset(rho_w, speed, CX, QSE)
+			end do
+		end if
+
+		if (mask(places, N_WALL)) then
+			do x = W, E
+				rho_w = measure_rho(N, x)
+				lattice(QS, N, x) = lattice(QN, gN, x) - offset(rho_w, speed, CX, QN)
+				lattice(QSE, N, x) = lattice(QNW, gN, x-1) - offset(rho_w, speed, CX, QNW)
+				lattice(QSW, N, x) = lattice(QNE, gN, x+1) - offset(rho_w, speed, CX, QNE)
+			end do
+		end if
 
 	end subroutine
 
@@ -132,6 +177,6 @@ contains
 		integer, intent(in) :: places
 
 		! TODO: communicate with neighbouring image
-	end subroutine flow_bc
+	end subroutine
 
 end module lbm_d2q9_boundry_conditions

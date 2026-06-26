@@ -43,6 +43,7 @@ module lbm_d2q9_consts
     real(dp), parameter :: PI = acos(-1.0d0)    !! pi appproximation for calcuations
     real(dp), parameter :: INIT_VAL = 999.999   !! initial lattice value (should be overriden)
 
+    real(dp), parameter :: cs2 = 1.0_dp / 3.0_dp    !! speed of sound on the lattice
 
     real(dp), parameter :: weights(0:8) = [                     &! weights:
         4.0d0/9.0d0,                                            &! for the rest channel

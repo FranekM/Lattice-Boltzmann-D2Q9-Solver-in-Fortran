@@ -137,7 +137,7 @@ contains
         integer :: i ! loop index
 
         do i = 1, bc_count
-            call bc_list(i)%apply(bc_list(i)%places)
+            call bc_list(i)%apply(bc_list(i)%places, bc_list(i)%speed)
         end do
     end subroutine
 
