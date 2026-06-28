@@ -99,8 +99,10 @@ contains
                 case ("periodic")
                     bc_list(j)%apply => periodic_bc
 
+            end select
+            select case(configs(i)%bc_post(j))
 	            case ("moving_wall")
-					bc_list(j)%apply => moving_wall_bc
+	                bc_list(j)%postproc => moving_wall_correction
 
             end select
             bc_list(j)%places = configs(i)%bc_places(j)

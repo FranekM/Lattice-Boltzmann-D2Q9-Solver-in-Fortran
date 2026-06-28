@@ -21,6 +21,8 @@ program LatticeBoltzmannMethod_D2Q9
 
     character(:), allocatable :: selected_configs(:)
 
+    real :: start, finish
+
     call read_arguments(selected_configs)
     call read_configs(selected_configs)
 
@@ -28,6 +30,8 @@ program LatticeBoltzmannMethod_D2Q9
         print *, 'Starting experiment: ', trim(configs(i)%name), ' from family: ', trim(configs(i)%family)
 
         if (.not. prepare_output_file(configs(i)%log%file)) cycle
+
+        call cpu_time(start)
 
         do j = 1, configs(i)%No
             omega = configs(i)%omegas(j)
@@ -69,7 +73,9 @@ program LatticeBoltzmannMethod_D2Q9
             )
         end do
 
-        print *, 'Experiment: ', trim(configs(i)%name), ' finished', char(10)
+        call cpu_time(finish)
+
+        print '(A,A,A,F10.2,A,A)', 'Experiment: ', trim(configs(i)%name), ' finished in ', (finish-start), 's', char(10)
     end do
 
 end program LatticeBoltzmannMethod_D2Q9

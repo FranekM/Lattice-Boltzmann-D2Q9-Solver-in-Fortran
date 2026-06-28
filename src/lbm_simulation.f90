@@ -56,6 +56,9 @@ contains
         integer, intent(in) :: Nt, log_step
         integer :: log_unit, t
 
+        real(dp) :: rho_w
+        integer :: x
+
         if (logging_enabled) open(   &
             newunit  = log_unit,     &
             file     = log%file,     &
@@ -71,6 +74,7 @@ contains
             call streaming_step()
             call communication_step()
             call collision_step()
+
         end do
 
         if (logging_enabled) close(log_unit)

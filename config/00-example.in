@@ -81,12 +81,14 @@
 !
 !    ! Boundary conditions
 !    cfg%bc_count  = 0
-!    cfg%bc_list   = "", ""
-!    cfg%bc_places = 0, 0
+!    cfg%bc_list   = "", "", ...
+!    cfg%bc_post   = "", "", ...
+!    cfg%bc_places = 0, 0, ...
+!    cfg%bc_speed  = 0, 0, ...
 !
 !    ! Relaxation parameters
 !    cfg%No = 0
-!    cfg%omegas = 0.0
+!    cfg%omegas = 0.0, 0.0, ...
 !
 !    ! Python display parameters
 !    cfg%disp_x = ""

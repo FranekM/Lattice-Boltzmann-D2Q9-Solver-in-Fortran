@@ -5,7 +5,7 @@ import pandas as pd
 import f90nml
 import math
 
-fps = 24
+fps = 64
 
 
 def init(config_file):
@@ -206,7 +206,7 @@ def amp_omega_plot(cfg, omega_idx=None):
     plt.grid()
     plt.show()
 
-def fld_streamplot(cfg, Np=1, t_list=None):
+def fld_streamplot(cfg, Np=1, t_list=None, density=0.5):
     Nt = cfg['Nt']
     Nx = cfg['Nx']
     Ny = cfg['Ny']
@@ -235,17 +235,18 @@ def fld_streamplot(cfg, Np=1, t_list=None):
         last_frame = frame_id
         ax = axes[i]
 
-        ux = frame['ux'].values.reshape(Ny, Nx).T
-        uy = frame['uy'].values.reshape(Ny, Nx).T
+        ux = frame['ux'].values.reshape(Ny, Nx)
+        uy = frame['uy'].values.reshape(Ny, Nx)
         speed = np.sqrt(ux**2 + uy**2)
 
         ax.imshow(speed, cmap="Blues_r")
         ax.streamplot(
                 x, y, ux, uy,
-                density = 0.5,
+                density = density,
                 linewidth= 0.5,
                 color = 'black'
         )
+        ax.invert_yaxis()
         ax.set_title(f"t={frame_id}")
         ax.set_aspect("equal")
 

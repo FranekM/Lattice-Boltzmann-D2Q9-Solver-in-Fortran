@@ -5,7 +5,8 @@ swd_show = False
 dwd_show = False
 hbc_show = False
 pf_show = False
-cf_show = True
+cf_show = False
+sl_show = True
 
 
 if swd_show: # shear wave decay
@@ -73,4 +74,10 @@ if hbc_show: # closed box pulse
     field_animation(config, 8, 0.005)
 
 
+if sl_show: # sliding lid
+    configs = init('hard-bc')
 
+    config = configs['sliding-lid-animation']
+    # field_animation(config, 8, 0.005)
+
+    fld_streamplot(config, t_list=[50], density=1.5)

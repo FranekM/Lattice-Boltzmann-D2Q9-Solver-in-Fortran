@@ -39,15 +39,20 @@ module lbm_d2q9_types
 
 	! BOUNDRY CONDITIONS
 	abstract interface
-        subroutine bc_func(places, speed)
-	        import dp
+        subroutine bc_func(places)
             integer, intent(in) :: places
-	        real(dp), intent(in) :: speed
+        end subroutine
+
+		subroutine pp_func(places, speed)
+			import dp
+			integer, intent(in) :: places
+			real(dp), intent(in) :: speed
         end subroutine
     end interface
 
     type boundry_condition
         procedure(bc_func), pointer, nopass :: apply => null()
+        procedure(pp_func), pointer, nopass :: postproc => null()
         integer :: places = 0
 	    real(dp) :: speed = 0.0_dp
     end type
