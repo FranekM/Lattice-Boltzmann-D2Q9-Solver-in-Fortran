@@ -31,6 +31,7 @@ module lbm_d2q9_consts
     integer, parameter :: N_WALL = 8        !! north wall mask for cummunication step
     integer, parameter :: ALL_WALLS = 15    !! all walls mask
 
+    ! TODO: consider droping _corners. Do e.g. SW_CORNER = S_WALL + W_WALL instead
     integer, parameter :: SW_CORNER = 16    !! southwest corner mask for cummunication step
     integer, parameter :: SE_CORNER = 32    !! southeast corner mask for cummunication step
     integer, parameter :: NW_CORNER = 64    !! northwest corner mask for cummunication step
@@ -39,6 +40,7 @@ module lbm_d2q9_consts
 
     integer, parameter :: ALL_PLACES = 255  !! all places (both walls and walls) mask
 
+    integer, parameter :: MAX_BC_COUNT = 8  !! max number of boundry conditions (max 4 walls and 4 corners)
 
     real(dp), parameter :: PI = acos(-1.0d0)    !! pi appproximation for calcuations
     real(dp), parameter :: INIT_VAL = 999.999   !! initial lattice value (should be overriden)
@@ -62,5 +64,13 @@ module lbm_d2q9_consts
         -1, -1,     &! q=7: move SW
         -1,  1      &! q=8: move SE
     ], [2,9])        !! 2DQ9 direction vectors (in column-major order -> y, x)
+
+contains
+
+    function mask(xs, x) result(m)
+        integer, intent(in) :: xs, x
+        logical :: m
+        m = iand(xs, x) /= 0
+    end function
 
 end module lbm_d2q9_consts

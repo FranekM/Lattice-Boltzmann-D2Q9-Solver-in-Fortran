@@ -17,10 +17,13 @@
     cfg%dpx = 0.0
 
     cfg%log%type = "point"
-    cfg%log%file = "out/dwd_amp_plots.tsv"
+    cfg%log%file = "out/dwd/amplitude"
+    cfg%log%ext  = ".tsv"
     cfg%log%Nf   = 256
     cfg%log%x    = 25
     cfg%log%y    = 50
+
+    cfg%debug_step = 500
 
     ! rho = rho0 + eps*sin(kx*x)
     cfg%rho%type = "sine"
@@ -58,15 +61,18 @@
     cfg%family = "density-wave-decay"
     cfg%name   = "dwd-field-animation"
 
-    cfg%Nx = 32
-    cfg%Ny = 32
-    cfg%Nt = 1024
+    cfg%Nx = 64
+    cfg%Ny = 64
+    cfg%Nt = 5000
     cfg%dpy = 0.0
     cfg%dpx = 0.0
 
     cfg%log%type = "field"
-    cfg%log%file = "out/dwd_fld_anim.tsv"
-    cfg%log%Nf   = 1024
+    cfg%log%file = "out/dwd/field_animation"
+    cfg%log%ext  = ".tsv"
+    cfg%log%Nf   = 1000
+
+    cfg%debug_step = 1000
 
     cfg%rho%type = "sine"
     cfg%rho%sine%val_0 = 1.0
@@ -96,18 +102,21 @@
 ! ------------------------- !
 &experiment
     cfg%family = "density-wave-decay"
-    cfg%name   = "dwd-profile-plots"
+    cfg%name   = "dwd-profile-snapshots"
 
     cfg%Nx = 128
     cfg%Ny = 128
-    cfg%Nt = 1024
+    cfg%Nt = 10000
     cfg%dpy = 0.0
     cfg%dpx = 0.0
 
     cfg%log%type = "profile_x"
-    cfg%log%file = "out/dwd_prf_plots.tsv"
+    cfg%log%file = "out/dwd/profile_x_snapshots"
+    cfg%log%ext  = ".tsv"
     cfg%log%Nf = 5
     cfg%log%y = 64
+
+    cfg%debug_step = 1000
 
     cfg%rho%type = "sine"
     cfg%rho%sine%val_0 = 1.0

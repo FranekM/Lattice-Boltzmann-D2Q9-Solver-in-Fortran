@@ -25,6 +25,7 @@ contains
             case("point")
                 allocate(log, source = point_logger(    &
                     file  = configs(i)%log%file,        &
+                    ext   = configs(i)%log%ext,         &
                     omega = omega,                      &
                     y     = configs(i)%log%y,           &
                     x     = configs(i)%log%x            &
@@ -33,18 +34,24 @@ contains
             case("profile_x")
                 allocate(log, source = profile_x_logger(&
                     file = configs(i)%log%file,         &
+                    ext   = configs(i)%log%ext,         &
+                    omega = omega,                      &
                     y    = configs(i)%log%y             &
                 ))
 
             case("profile_y")
                 allocate(log, source = profile_y_logger(&
                     file = configs(i)%log%file,         &
+                    ext   = configs(i)%log%ext,         &
+                    omega = omega,                      &
                     x    = configs(i)%log%x             &
                 ))
 
             case("field")
                 allocate(log, source = field_logger(    &
-                    file = configs(i)%log%file          &
+                    file = configs(i)%log%file,         &
+                    ext   = configs(i)%log%ext,         &
+                    omega = omega                       &
                 ))
 
         end select
@@ -106,7 +113,7 @@ contains
 
             end select
             bc_list(j)%places = configs(i)%bc_places(j)
-			bc_list(j)%speed = configs(i)%bc_speed(j)
+			bc_list(j)%speed  = configs(i)%bc_speed(j)
         end do
 	end subroutine
 

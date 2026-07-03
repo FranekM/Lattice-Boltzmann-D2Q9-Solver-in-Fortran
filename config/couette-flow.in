@@ -12,13 +12,16 @@
 
     cfg%Nx = 64
     cfg%Ny = 64
-    cfg%Nt = 5000
+    cfg%Nt = 2000
     cfg%dpx = 0.0
     cfg%dpy = 0.0
 
     cfg%log%type = "field"
-    cfg%log%file = "out/cf_field.tsv"
-    cfg%log%Nf = 1000
+    cfg%log%file = "out/cf/field_animation"
+    cfg%log%ext  = ".tsv"
+    cfg%log%Nf = 100
+
+    cfg%debug_step = 500
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -34,7 +37,8 @@
     cfg%bc_places(1) = 5
     cfg%bc_list(2) = "bounce_back"
     cfg%bc_places(2) = 2
-    cfg%bc_list(3) = "moving_wall"
+    cfg%bc_list(3) = "bounce_back"
+    cfg%bc_post(3) = "moving_wall"
     cfg%bc_places(3) = 8
     cfg%bc_speed(3) = 0.1
 
@@ -48,18 +52,21 @@
 ! ---------------- !
 &experiment
     cfg%family = "couette-flow"
-    cfg%name   = "cf-profile"
+    cfg%name   = "cf-profile-snapshots"
 
-    cfg%Nx = 128
-    cfg%Ny = 128
-    cfg%Nt = 30000
+    cfg%Nx = 300
+    cfg%Ny = 300
+    cfg%Nt = 150000
     cfg%dpx = 0.0
     cfg%dpy = 0.0
 
     cfg%log%type = "profile_y"
-    cfg%log%file = "out/cf_profile.tsv"
+    cfg%log%file = "out/cf/profile_y_snapshots"
+    cfg%log%ext  = ".tsv"
     cfg%log%Nf = 5
     cfg%log%x = 64
+
+    cfg%debug_step = 10000
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -75,13 +82,14 @@
     cfg%bc_places(1) = 5
     cfg%bc_list(2) = "bounce_back"
     cfg%bc_places(2) = 2
-    cfg%bc_list(3) = "moving_wall"
+    cfg%bc_list(3) = "bounce_back"
+    cfg%bc_post(3) = "moving_wall"
     cfg%bc_places(3) = 8
     cfg%bc_speed(3) = 0.1
 
     cfg%No = 1
     cfg%omegas = 1.0
 
-    cfg%disp_x = "x" ! sic!
+    cfg%disp_x = "y"
     cfg%disp_y = "ux"
 /

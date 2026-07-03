@@ -12,13 +12,16 @@
 
     cfg%Nx = 64
     cfg%Ny = 64
-    cfg%Nt = 2048
-    cfg%dpx = 0.01
+    cfg%Nt = 2000
+    cfg%dpx = 0.001
     cfg%dpy = 0.0
 
     cfg%log%type = "field"
-    cfg%log%file = "out/pf_field.tsv"
-    cfg%log%Nf = 512
+    cfg%log%file = "out/pf/field_animation"
+    cfg%log%ext  = ".tsv"
+    cfg%log%Nf = 100
+
+    cfg%debug_step = 1000
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -45,18 +48,21 @@
 ! ---------------- !
 &experiment
     cfg%family = "poiseuille-flow"
-    cfg%name   = "pf-profile"
+    cfg%name   = "pf-profile-snapshots"
 
-    cfg%Nx = 128
-    cfg%Ny = 128
-    cfg%Nt = 65536
-    cfg%dpx = 0.01
+    cfg%Nx = 300
+    cfg%Ny = 300
+    cfg%Nt = 200000
+    cfg%dpx = 0.001
     cfg%dpy = 0.0
 
     cfg%log%type = "profile_y"
-    cfg%log%file = "out/pf_profile.tsv"
+    cfg%log%file = "out/pf/profile_y_snapshots"
+    cfg%log%ext  = ".tsv"
     cfg%log%Nf = 5
-    cfg%log%x = 16
+    cfg%log%x = 32
+
+    cfg%debug_step = 10000
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -76,6 +82,6 @@
     cfg%No = 1
     cfg%omegas = 1.0
 
-    cfg%disp_x = "x" ! sic!
+    cfg%disp_x = "y"
     cfg%disp_y = "ux"
 /

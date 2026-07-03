@@ -11,10 +11,14 @@
 !
 !    ! Logger parameters
 !    cfg%log%type = ""
-!    cfg%log%file = "out/.tsv"
+!    cfg%log%file = "out/dir/filename"
+!    cfg%log%ext  = ".tsv"
 !    cfg%log%Nf   = 0
 !    cfg%log%x    = 0
 !    cfg%log%y    = 0
+!
+!    ! debug progress step (0 = no debug)
+!    cfg%debug_step = 0
 !
 !    ! rho field
 !    cfg%rho%type = ""

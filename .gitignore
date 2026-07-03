@@ -2,5 +2,7 @@
 .venv/
 bin/
 out/
+tmp/
+src/py/__pycache__/
 intel oneAPI.exe.lnk
 lbm.exe

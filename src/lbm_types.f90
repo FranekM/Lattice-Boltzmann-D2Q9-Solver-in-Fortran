@@ -23,6 +23,7 @@ module lbm_d2q9_types
 	! LOGGERS
 	type, abstract :: logger
 		character(:), allocatable :: file
+		character(:), allocatable :: ext
 	contains
 		procedure(log_interface), deferred :: log
 	end type

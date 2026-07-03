@@ -17,10 +17,13 @@
     cfg%dpx = 0.0
 
     cfg%log%type = "point"
-    cfg%log%file = "out/swd_amp_plots.tsv"
+    cfg%log%file = "out/swd/amplitude_point_omega_sweep"
+    cfg%log%ext  = ".tsv"
     cfg%log%Nf   = 256
     cfg%log%x    = 50
     cfg%log%y    = 25
+
+    cfg%debug_step = 500
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -61,10 +64,13 @@
     cfg%Nt = 1024
 
     cfg%log%type = "point"
-    cfg%log%file = "out/swd_vis_plots.tsv"
+    cfg%log%file = "out/swd/viscosity_point_omega_sweep"
+    cfg%log%ext  = ".tsv"
     cfg%log%Nf   = 16
     cfg%log%x    = 50
     cfg%log%y    = 25
+
+    cfg%debug_step = 500
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -97,13 +103,16 @@
     cfg%family = "shear-wave-decay"
     cfg%name   = "swd-field-animation"
 
-    cfg%Nx = 32
-    cfg%Ny = 32
-    cfg%Nt = 1024
+    cfg%Nx = 64
+    cfg%Ny = 64
+    cfg%Nt = 5000
 
     cfg%log%type = "field"
-    cfg%log%file = "out/swd_fld_anim.tsv"
-    cfg%log%Nf   = 1024
+    cfg%log%file = "out/swd/field_animation"
+    cfg%log%ext  = ".tsv"
+    cfg%log%Nf   = 1000
+
+    cfg%debug_step = 1000
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -131,16 +140,19 @@
 ! -------------------------- !
 &experiment
     cfg%family = "shear-wave-decay"
-    cfg%name   = "swd-profile-plots"
+    cfg%name   = "swd-profile-snapshots"
 
     cfg%Nx = 300
     cfg%Ny = 300
-    cfg%Nt = 20480
+    cfg%Nt = 50000
 
     cfg%log%type = "profile_y"
-    cfg%log%file = "out/swd_prf_plots.tsv"
+    cfg%log%file = "out/swd/profile_y_snapshots"
+    cfg%log%ext  = ".tsv"
     cfg%log%Nf = 5
     cfg%log%x = 64
+
+    cfg%debug_step = 10000
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -161,7 +173,49 @@
     cfg%No = 1
     cfg%omegas = 1.0
 
-    cfg%disp_x = "x"
+    cfg%disp_x = "y"
+    cfg%disp_y = "ux"
+/
+
+! ------------------------------ !
+! Velocity profile snapshots 2*n !
+! ------------------------------ !
+&experiment
+    cfg%family = "shear-wave-decay"
+    cfg%name   = "swd-2n-profile-snapshots"
+
+    cfg%Nx = 300
+    cfg%Ny = 300
+    cfg%Nt = 20000
+
+    cfg%log%type = "profile_y"
+    cfg%log%file = "out/swd/2n-profile_y_snapshots"
+    cfg%log%ext  = ".tsv"
+    cfg%log%Nf = 5
+    cfg%log%x = 64
+
+    cfg%debug_step = 1000
+
+    cfg%rho%type = "constant"
+    cfg%rho%const%value = 1.0
+
+    cfg%ux%type = "sine"
+    cfg%ux%sine%val_0 = 0.0
+    cfg%ux%sine%eps_y = 0.1
+    cfg%ux%sine%mode_y = 1
+    cfg%ux%sine%ny = 2
+
+    cfg%uy%type = "constant"
+    cfg%uy%const%value = 0.0
+
+    cfg%bc_count = 1
+    cfg%bc_list = "periodic"
+    cfg%bc_places = 255
+
+    cfg%No = 1
+    cfg%omegas = 1.0
+
+    cfg%disp_x = "y"
     cfg%disp_y = "ux"
 /
 
@@ -174,12 +228,15 @@
 
     cfg%Nx = 64
     cfg%Ny = 64
-    cfg%Nt = 512
+    cfg%Nt = 5000
 
     cfg%log%type = "profile_y"
-    cfg%log%file = "out/swd_prf_anim.tsv"
-    cfg%log%Nf = 512
+    cfg%log%file = "out/swd/profile_y_animation"
+    cfg%log%ext  = ".tsv"
+    cfg%log%Nf = 1000
     cfg%log%x = 32
+
+    cfg%debug_step = 1000
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -200,6 +257,6 @@
     cfg%No = 1
     cfg%omegas = 1.0
 
-    cfg%disp_x = "x"
+    cfg%disp_x = "y"
     cfg%disp_y = "ux"
 /

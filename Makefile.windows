@@ -7,7 +7,7 @@ BIN_DIR = bin
 
 TARGET = lbm.exe
 
-FC_FLAGS = /nologo /module:$(MOD_DIR)
+FC_FLAGS = /nologo /module:$(MOD_DIR) /Qcoarray /O3 /QxHost /Qipo /Qunroll
 
 SRC = 								\
 	$(SRC_DIR)/lbm_types.f90 		\
@@ -28,7 +28,7 @@ all: $(TARGET)
 
 # Linking
 $(TARGET): $(OBJ)
-	$(FC) /nologo $(OBJ) /exe:$@
+	$(FC) $(FC_FLAGS) $(OBJ) /exe:$@
 
 # Compilation
 $(OBJ_DIR)/%.obj: $(SRC_DIR)/%.f90

@@ -3,10 +3,12 @@ from plots import *
 
 swd_show = False
 dwd_show = False
-hbc_show = False
+gwd_show = False
 pf_show = False
 cf_show = False
-sl_show = True
+mw_show = False
+sl_show = False
+sl300_show = True
 
 
 if swd_show: # shear wave decay
@@ -15,20 +17,20 @@ if swd_show: # shear wave decay
     config = configs['swd-field-animation']
     field_animation(config, 2, 0.005)
 
-    # config = configs['swd-field-animation']
-    # fld_streamplot(config, 1)
+    config = configs['swd-profile-animation']
+    profile_animation(config)
 
-    # config = configs['swd-profile-animation']
-    # profile_animation(config)
+    config = configs['swd-profile-snapshots']
+    profile_snapshots(config)
 
-    config = configs['swd-profile-plots']
-    profile_plot(config)
+    config = configs['swd-2n-profile-snapshots']
+    profile_snapshots(config)
 
     config = configs['swd-amplitude-sweep']
-    amp_omega_plot(config)
+    point_amplitude_omega_sweep(config)
 
     config = configs['swd-viscosity-sweep']
-    vis_omega_plot(config)
+    point_viscosity_omega_sweep(config)
 
 
 if dwd_show: # density wave decay
@@ -37,35 +39,15 @@ if dwd_show: # density wave decay
     config = configs['dwd-field-animation']
     field_animation(config, 2, 0.005)
 
-    config = configs['dwd-profile-plots']
-    profile_plot(config)
+    config = configs['dwd-profile-snapshots']
+    profile_snapshots(config)
 
     config = configs['dwd-amplitude-sweep']
-    amp_omega_plot(config, [0, 3, 6])
+    point_amplitude_omega_sweep(config)
 
 
-if pf_show: # poiseuille flow
-    configs = init('poiseuille-flow')
-
-    config = configs['pf-field-animation']
-    field_animation(config, 4, 0.005)
-
-    config = configs['pf-profile']
-    profile_plot(config)
-
-
-if cf_show: # couette flow
-    configs = init('couette-flow')
-
-    config = configs['cf-field-animation']
-    field_animation(config, 4, 5.0)
-
-    config = configs['cf-profile']
-    profile_plot(config)
-
-
-if hbc_show: # closed box pulse
-    configs = init('hard-bc')
+if gwd_show: # closed box pulse
+    configs = init('gaussian-wave-decay')
 
     config = configs['box-density-pulse-animation']
     field_animation(config, 8, 0.005)
@@ -74,10 +56,46 @@ if hbc_show: # closed box pulse
     field_animation(config, 8, 0.005)
 
 
-if sl_show: # sliding lid
-    configs = init('hard-bc')
+if pf_show: # poiseuille flow
+    configs = init('poiseuille-flow')
+
+    config = configs['pf-field-animation']
+    field_animation(config, 4, 0.005)
+
+    config = configs['pf-profile-snapshots']
+    profile_snapshots(config)
+
+
+if cf_show: # couette flow
+    configs = init('couette-flow')
+
+    config = configs['cf-field-animation']
+    field_animation(config, 4, 0.01)
+
+    config = configs['cf-profile-snapshots']
+    profile_snapshots(config)
+
+
+if mw_show: # sliding lid
+    configs = init('moving-walls')
 
     config = configs['sliding-lid-animation']
-    # field_animation(config, 8, 0.005)
+    field_streamplot(config, t_list=[5], density=1.5)
 
-    fld_streamplot(config, t_list=[50], density=1.5)
+    # probably config issues
+    # config = configs['big-vortex-animation']
+    # field_streamplot(config, t_list=[5], density=1.5)
+
+
+if sl_show:
+    configs = init('sliding-lid')
+
+    config = configs['sliding-lid']
+    field_streamplot(config, t_list=[1], density=1.5)
+
+
+if sl300_show:
+    configs = init('sliding-lid-300')
+
+    config = configs['sliding-lid-300']
+    field_streamplot(config, t_list=[1], density=1.5)

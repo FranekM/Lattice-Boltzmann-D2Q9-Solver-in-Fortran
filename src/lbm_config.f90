@@ -19,6 +19,7 @@ module lbm_config
         character(32) :: type = ""
 
         character(256) :: file = ""
+        character(32)  :: ext  = ""
         integer :: Nf = 0
         integer :: x = 0
         integer :: y = 0
@@ -67,6 +68,9 @@ module lbm_config
 
         ! logging paramters
         type(logger_config) :: log
+
+        ! debug progress every %debug_step% time steps
+        integer :: debug_step = 0
 
         ! fields paramters
         type(field_config) :: rho
