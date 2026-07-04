@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=lbm-scaling-test
-#SBATCH --partition=dev_cpu_il
+#SBATCH --partition=cpu_il
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=64
-#SBATCH --time=00:30:00
+#SBATCH --time=01:00:00
 #SBATCH --mem-per-cpu=2000mb
 #SBATCH --output=output.%j.out
 #SBATCH --error=error.%j.err
@@ -39,7 +39,7 @@ for i in {1..11}; do
 
     echo "Running experiment with $n images"
 
-    echo "-genvall -genv I_MPI_FABRICS=shm:ofi -n $n $EXE" > "$FOR_COARRAY_CONFIG_FILE"
+    echo "-genvall -genv I_MPI_FABRICS=shm:ofi -n $n $EXE $CONFIG" > "$FOR_COARRAY_CONFIG_FILE"
 
     $EXE "$CONFIG"
 
