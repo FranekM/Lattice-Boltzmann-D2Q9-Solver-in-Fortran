@@ -65,6 +65,19 @@ module lbm_d2q9_consts
         -1,  1      &! q=8: move SE
     ], [2,9])        !! 2DQ9 direction vectors (in column-major order -> y, x)
 
+    real(dp), parameter :: c_dp(0:1, 0:8) = reshape([ &
+         0.0_dp,  0.0_dp,     &! q=0: no movment
+         0.0_dp,  1.0_dp,     &! q=1: move east
+         1.0_dp,  0.0_dp,     &! q=2: move north
+         0.0_dp, -1.0_dp,     &! q=3: move west
+        -1.0_dp,  0.0_dp,     &! q=4: move south
+         1.0_dp,  1.0_dp,     &! q=5: move NE
+         1.0_dp, -1.0_dp,     &! q=6: move NW
+        -1.0_dp, -1.0_dp,     &! q=7: move SW
+        -1.0_dp,  1.0_dp      &! q=8: move SE
+    ], [2,9])        !! 2DQ9 direction vectors (in column-major order -> y, x)
+
+
 contains
 
     function mask(xs, x) result(m)

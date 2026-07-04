@@ -6,3 +6,4 @@ tmp/
 src/py/__pycache__/
 intel oneAPI.exe.lnk
 lbm.exe
+fast.exe

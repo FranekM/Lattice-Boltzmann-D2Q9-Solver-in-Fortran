@@ -1,13 +1,32 @@
+.PHONY: all dirs clean main fast
+
 FC = ifx
+FC_FLAGS = /nologo /Qcoarray /O3 /QxHost /Qipo /Qunroll
+
+OUT_FAST_WIN =	 \
+	out\fast	 \
+	out\fast\1   \
+	out\fast\4   \
+	out\fast\9   \
+	out\fast\16  \
+	out\fast\25  \
+	out\fast\36  \
+	out\fast\49  \
+	out\fast\64  \
+	out\fast\81  \
+	out\fast\100 \
+	out\fast\121 \
+
+
+# MAIN VERSATILE VERSION
 
 SRC_DIR = src
-OBJ_DIR = bin\obj
-MOD_DIR = bin\mods
 BIN_DIR = bin
-
-TARGET = lbm.exe
-
-FC_FLAGS = /nologo /module:$(MOD_DIR) /Qcoarray /O3 /QxHost /Qipo /Qunroll
+OBJ_DIR = bin/obj
+MOD_DIR = bin/mods
+OBJ_WIN = bin\obj
+MOD_WIN = bin\mods
+TARGET  = lbm.exe
 
 SRC = 								\
 	$(SRC_DIR)/lbm_types.f90 		\
@@ -24,7 +43,41 @@ SRC = 								\
 
 OBJ = $(SRC:$(SRC_DIR)/%.f90=$(OBJ_DIR)/%.obj)
 
-all: $(TARGET)
+
+# OPTIMIZED (FAST) SLIDING LID
+
+SRC_FAST_DIR = src/fast
+BIN_FAST_DIR = bin/fast
+OBJ_FAST_DIR = bin/fast/obj
+MOD_FAST_DIR = bin/fast/mods
+OBJ_FAST_WIN = bin\fast\obj
+MOD_FAST_WIN = bin\fast\mods
+TARGET_FAST  = fast.exe
+
+SRC_FAST = 								\
+	$(SRC_FAST_DIR)/lbm_fast_global.f90 \
+	$(SRC_FAST_DIR)/lbm_fast_solver.f90 \
+	$(SRC_FAST_DIR)/lbm_fast_logger.f90 \
+	$(SRC_FAST_DIR)/lbm_fast.f90
+
+OBJ_FAST = $(SRC_FAST:$(SRC_FAST_DIR)/%.f90=$(OBJ_FAST_DIR)/%.obj)
+
+
+
+all: dirs $(TARGET) $(TARGET_FAST)
+main: dirs $(TARGET)
+fast: dirs $(TARGET_FAST)
+
+
+# create directories if not exist
+dirs:
+	@if not exist "$(OBJ_WIN)" mkdir "$(OBJ_WIN)"
+	@if not exist "$(MOD_WIN)" mkdir "$(MOD_WIN)"
+	@if not exist "$(OBJ_FAST_WIN)" mkdir "$(OBJ_FAST_WIN)"
+	@if not exist "$(MOD_FAST_WIN)" mkdir "$(MOD_FAST_WIN)"
+	@for %%d in ($(OUT_FAST_WIN)) do if not exist "%%d" mkdir "%%d"
+
+
 
 # Linking
 $(TARGET): $(OBJ)
@@ -32,13 +85,31 @@ $(TARGET): $(OBJ)
 
 # Compilation
 $(OBJ_DIR)/%.obj: $(SRC_DIR)/%.f90
-	$(FC) $(FC_FLAGS) /c $< /object:$@
+	$(FC) /module:$(MOD_DIR) $(FC_FLAGS) /c $< /object:$@
+
+
+# Linking optimized (fast) version
+$(TARGET_FAST): $(OBJ_FAST)
+	$(FC) $(FC_FLAGS) $(OBJ_FAST) /exe:$@
+
+# Compilation optimized (fast) version
+$(OBJ_FAST_DIR)/%.obj: $(SRC_FAST_DIR)/%.f90
+	$(FC) /module:$(MOD_FAST_DIR) $(FC_FLAGS) /c $< /object:$@
+
+
+clean_out:
+	@for %%d in ($(OUT_FAST_WIN)) do del /Q "%%d\*"
+
 
 # Remove build files
 clean:
-	del /Q $(OBJ_DIR)\*.obj
-	del /Q $(MOD_DIR)\*.mod
-	del /Q $(TARGET)
+	- del /Q "$(OBJ_WIN)\*.obj"
+	- del /Q "$(MOD_WIN)\*.mod"
+	- del /Q "$(TARGET)"
+	- del /Q "$(OBJ_FAST_WIN)\*.obj"
+	- del /Q "$(MOD_FAST_WIN)\*.mod"
+	- del /Q "$(TARGET_FAST)"
 
-run: all
-	$(TARGET)
+print:
+	@echo OBJ=$(OBJ)
+	@echo OBJ_FAST=$(OBJ_FAST)

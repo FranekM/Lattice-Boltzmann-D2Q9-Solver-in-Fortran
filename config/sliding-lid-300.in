@@ -16,7 +16,7 @@
     cfg%dpy = 0.0
     cfg%dpx = 0.0
 
-    cfg%log%type = "none"
+    cfg%log%type = "field"
     cfg%log%file = "out/sl300/sliding-lid"
     cfg%log%ext  = ".tsv"
     cfg%log%Nf   = 1

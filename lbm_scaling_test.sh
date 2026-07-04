@@ -4,7 +4,7 @@
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=64
 #SBATCH --time=01:00:00
-#SBATCH --mem-per-cpu=2000mb
+#SBATCH --mem-per-cpu=256mb
 #SBATCH --output=output.%j.out
 #SBATCH --error=error.%j.err
 
@@ -26,7 +26,7 @@ CONFIG=sliding-lid-300
 echo "Compiling program ..."
 
 make -f Makefile.linux clean
-make -f Makefile.linux
+make -f Makefile.linux main
 
 rc=$?
 if [ $rc -ne 0 ]; then

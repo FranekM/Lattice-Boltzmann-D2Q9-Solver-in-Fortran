@@ -11,9 +11,10 @@ module lbm_d2q9_solver
     integer :: Niy, Nix                               !! number of image y and x indices
 
     real(dp), private :: omega, dpy, dpx              !! simulation parameters
+    real(dp), private :: one_minus_omega              !!
 
     real(dp), allocatable :: lattice(:, :, :)[:, :]   !! distribution function
-    real(dp), allocatable :: sbuffer(:, :, :)[:, :]   !! streaming buffer
+    real(dp), allocatable :: sbuffer(:, :, :)         !! streaming buffer
 
     type(boundry_condition), private :: bc_list(MAX_BC_COUNT)
     integer, private :: bc_count = 0
@@ -238,7 +239,7 @@ contains
         sync all
 
         allocate(lattice(0:Nq-1, gS:gN, gW:gE)[Niy, *])
-        allocate(sbuffer(0:Nq-1, gS:gN, gW:gE)[Niy, *])
+        allocate(sbuffer(0:Nq-1, gS:gN, gW:gE))
 
         sync all
 
@@ -246,6 +247,7 @@ contains
         Ix  = this_image(lattice, 2)
 
         omega = set_omega
+        one_minus_omega = (1.0_dp - omega)
         dpy = set_dpy
         dpx = set_dpx
 
@@ -354,21 +356,42 @@ contains
 
 
     subroutine collision_step()
-        real(dp) :: rho, uy, ux !! macro properties
-        integer :: x, y         !! loop indicies
+        integer :: x, y
+        real(dp) :: rho, inv_rho, uy, ux
+        real(dp) :: feq, au2, cu
+        real(dp) :: f(0:Nq-1)
+        integer :: q
 
-        do x = W, E
-            do y = S, N
-                rho = measure_rho(y, x)
-                uy = measure_u(CY, y, x, rho) + pressure_acc(dpy, Ny, rho)
-                ux = measure_u(CX, y, x, rho) + pressure_acc(dpx, Nx, rho)
-                lattice(:, y, x) = (1.0_dp - omega) * lattice(:, y, x) + omega * feq(uy, ux, rho)
+        do y = S, N
+            do x = W, E
+                rho = 0.0_dp
+                uy = 0.0_dp
+                ux = 0.0_dp
+
+                do q = 0, Nq-1
+                    f(q) = lattice(q, y, x)
+                    rho = rho + f(q)
+                    uy = uy + f(q) * c_dp(CY, q)
+                    ux = ux + f(q) * c_dp(CX, q)
+                end do
+
+                inv_rho = 1.0_dp / rho
+                uy = uy * inv_rho
+                ux = ux * inv_rho
+
+                au2 = -1.5_dp * (uy*uy + ux*ux)
+
+                do q = 0, Nq-1
+                    cu = c_dp(CY, q) * uy + c_dp(CX, q) * ux
+                    feq = weights(q) * rho * (1.0_dp + 3.0_dp*cu + 4.5_dp*cu*cu + au2)
+                    lattice(q, y, x) = one_minus_omega * f(q) + omega * feq
+                end do
             end do
         end do
     end subroutine
 
     subroutine streaming_step()
-        integer :: q ! loop index
+        integer :: q
 
         do q = 0, Nq-1
             sbuffer(q, S+c(CY, q):N+c(CY,q), W+c(CX,q):E+c(CX,q)) = lattice(q, S:N, W:E)

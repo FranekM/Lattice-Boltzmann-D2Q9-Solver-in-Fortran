@@ -18,7 +18,7 @@ contains
 		real(dp), intent(in) :: rho, speed
 		real(dp) :: off
 
-		off = 2.0_dp * weights(q) * rho * c(ci, q) * speed / cs2
+		off = 2.0_dp * weights(q) * rho * c_dp(ci, q) * speed / cs2
 	end function
 
 	function opposite_im_idx(ci) result(op)

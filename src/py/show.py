@@ -8,7 +8,9 @@ pf_show = False
 cf_show = False
 mw_show = False
 sl_show = False
-sl300_show = True
+
+sl300_show = False
+sl_fast_show = True
 
 
 if swd_show: # shear wave decay
@@ -99,3 +101,19 @@ if sl300_show:
 
     config = configs['sliding-lid-300']
     field_streamplot(config, t_list=[1], density=1.5)
+
+
+if sl_fast_show:
+    config = {
+        'family': 'OPTIMISED',
+        'name': 'SLIDING LID',
+        'Nt': 10000,
+        'Nx': 300,
+        'Ny': 300,
+        'log': {
+            'file': 'out/fast/sl300-',
+            'ext': '.tsv'
+        }
+    }
+
+    field_streamplot(config, t_list=[0], density=1.5)
