@@ -13,7 +13,7 @@ module lbm_d2q9_solver
     real(dp), private :: omega, dpy, dpx              !! simulation parameters
 
     real(dp), allocatable :: lattice(:, :, :)[:, :]   !! distribution function
-    real(dp), allocatable :: sbuffer(:, :, :)[:, :]   !! streaming buffer
+    real(dp), allocatable :: sbuffer(:, :, :)         !! streaming buffer
 
     type(boundry_condition), private :: bc_list(MAX_BC_COUNT)
     integer, private :: bc_count = 0
@@ -236,10 +236,8 @@ contains
         gN = N + 1
 
         sync all
-
         allocate(lattice(0:Nq-1, gS:gN, gW:gE)[Niy, *])
-        allocate(sbuffer(0:Nq-1, gS:gN, gW:gE)[Niy, *])
-
+        allocate(sbuffer(0:Nq-1, gS:gN, gW:gE))
         sync all
 
         Iy  = this_image(lattice, 1)
@@ -249,8 +247,6 @@ contains
         dpy = set_dpy
         dpx = set_dpx
 
-        lattice = INIT_VAL
-        sbuffer = INIT_VAL
     end subroutine
 
     subroutine set_initial_condition(rho, uy, ux)
@@ -368,10 +364,14 @@ contains
     end subroutine
 
     subroutine streaming_step()
-        integer :: q ! loop index
+        integer :: y, x, q ! loop indices
 
-        do q = 0, Nq-1
-            sbuffer(q, S+c(CY, q):N+c(CY,q), W+c(CX,q):E+c(CX,q)) = lattice(q, S:N, W:E)
+        do y = S, N
+            do x = W, E
+                do q = 0, Nq-1
+                    sbuffer(q, y+c(CY, q), x+c(CX,q)) = lattice(q, y, x)
+                end do
+            end do
         end do
 
         lattice = sbuffer
