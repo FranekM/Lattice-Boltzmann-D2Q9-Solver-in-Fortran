@@ -94,11 +94,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.f90
 
 # Linking optimized (fast) version
 $(TARGET_FAST): $(OBJ_FAST)
-	$(FC) $(FC_FLAGS) $(OBJ_FAST) -o $@
+	$(FC) $(FC_FLAGS_2) $(OBJ_FAST) -o $@
 
 # Compilation optimized (fast) version
 $(OBJ_FAST_DIR)/%.o: $(SRC_FAST_DIR)/%.f90
-	$(FC) -module $(MOD_FAST_DIR) $(FC_FLAGS) -c $< -o $@
+	$(FC) -module $(MOD_FAST_DIR) $(FC_FLAGS_2) -c $< -o $@
 
 
 clean_out:

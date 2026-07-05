@@ -1,7 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-parent = "../../../out/fast"
+parent_local = "../../../out/fast"
+parent_bw_1 = "../../../out/fast_bw_1/fast"
+parent_bw_2 = "../../../out/fast_bw_2/fast"
+
+parent = parent_bw_2
 
 df = pd.read_csv(
         f"{parent}/stats.tsv",

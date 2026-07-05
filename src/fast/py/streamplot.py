@@ -5,7 +5,11 @@ import re
 
 from pathlib import Path
 
-parent = "../../../out/fast"
+parent_local = "../../../out/fast"
+parent_bw_1 = "../../../out/fast_bw_1/fast"
+parent_bw_2 = "../../../out/fast_bw_2/fast"
+
+parent = parent_bw_2
 file_base = "sl300-"
 ext = ".tsv"
 
@@ -96,4 +100,4 @@ def field_streamplot(n, density=0.5):
     plt.show()
 
 
-field_streamplot(4, density=1.5)
+field_streamplot(121, density=1.5)
