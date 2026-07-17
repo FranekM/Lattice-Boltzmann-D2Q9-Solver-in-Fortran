@@ -64,6 +64,7 @@ module lbm_d2q9_global
 	real :: total_communication_time    = 0
 	real :: total_slide_time            = 0
 	real :: total_copy_time             = 0
+	real :: total_sync_time             = 0
 
 	real :: st  = 0
 	real :: et  = 0

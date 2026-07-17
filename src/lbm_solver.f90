@@ -97,7 +97,6 @@ contains
         do x = W, E
 	        do y = S, N
 		        do q = 0, Nq-1
-		            ! sbuffer(q, y+c(CY, q), x+c(CX, q)) = lattice(q, y, x)
 			        sbuffer(q, y, x) = lattice(q, y-c(CY, q), x-c(CX, q))
 		        end do
 	        end do
