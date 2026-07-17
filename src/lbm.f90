@@ -18,9 +18,13 @@ program lbm_d2q9
 
 		call cpu_time(st)
 		call streaming_step()
-		sync all
 		call cpu_time(et)
 		total_streaming_time = total_streaming_time + (et - st)
+
+		call cpu_time(st)
+		sync all
+		call cpu_time(et)
+		total_sync_time = total_sync_time + (et - st)
 
 		call cpu_time(st)
 		call communication_step()

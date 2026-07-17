@@ -98,20 +98,18 @@ contains
         do x = W, E
 	        do y = S, N
 		        do q = 0, Nq-1
-		            sbuffer(q, y+c(CY, q), x+c(CX, q)) = lattice(q, y, x)   ! push streaming - continous reads
-		            ! Potential optimization: pull straming (requires rewering communication)
-			        ! sbuffer(q, y, x) = lattice(q, y+c(CY, q), x+c(CX, q))   ! pull streaming - continous writes
+		            sbuffer(q, y+c(CY, q), x+c(CX, q)) = lattice(q, y, x)
 		        end do
 	        end do
         end do
         call cpu_time(et2)
         total_slide_time = total_slide_time + (et2 - st2)
 
-
         call cpu_time(st2)
         lattice = sbuffer
 	    call cpu_time(et2)
 	    total_copy_time = total_copy_time + (et2 - st2)
+
     end subroutine
 
     subroutine communication_step()
