@@ -1,83 +1,47 @@
-.PHONY: all dirs clean main fast
+.PHONY: all dirs clean clean-out main fast
 
 FC = ifx
 FC_FLAGS = /nologo /Qcoarray /O3 /QxHost /Qipo /Qunroll
 
-OUT_FAST_WIN =	 \
-	out\fast	 \
-	out\fast\1   \
-	out\fast\4   \
-	out\fast\9   \
-	out\fast\16  \
-	out\fast\25  \
-	out\fast\36  \
-	out\fast\49  \
-	out\fast\64  \
-	out\fast\81  \
-	out\fast\100 \
-	out\fast\121 \
+OUT_DIR = out\optim_1
+OUT_DIRS =	       \
+	$(OUT_DIR)	   \
+	$(OUT_DIR)\1   \
+	$(OUT_DIR)\4   \
+	$(OUT_DIR)\9   \
+	$(OUT_DIR)\16  \
+	$(OUT_DIR)\25  \
+	$(OUT_DIR)\36  \
+	$(OUT_DIR)\49  \
+	$(OUT_DIR)\64  \
+	$(OUT_DIR)\81  \
+	$(OUT_DIR)\100 \
+	$(OUT_DIR)\121 \
 
-
-# MAIN VERSATILE VERSION
 
 SRC_DIR = src
 BIN_DIR = bin
-OBJ_DIR = bin/obj
-MOD_DIR = bin/mods
-OBJ_WIN = bin\obj
-MOD_WIN = bin\mods
-TARGET  = lbm.exe
+OBJ_DIR = $(BIN_DIR)\obj
+MOD_DIR = $(BIN_DIR)\mods
 
-SRC = 								\
-	$(SRC_DIR)/lbm_types.f90 		\
-	$(SRC_DIR)/lbm_consts.f90 		\
-	$(SRC_DIR)/lbm_solver.f90 		\
-	$(SRC_DIR)/lbm_bc.f90 			\
-	$(SRC_DIR)/lbm_utils.f90		\
-	$(SRC_DIR)/lbm_fields.f90 		\
-	$(SRC_DIR)/lbm_loggers.f90 		\
-	$(SRC_DIR)/lbm_simulation.f90 	\
-	$(SRC_DIR)/lbm_config.f90 		\
-	$(SRC_DIR)/lbm_faktory.f90 		\
+TARGET  = $(BIN_DIR)\lbm.exe
+
+SRC = 						  \
+	$(SRC_DIR)/lbm_global.f90 \
+	$(SRC_DIR)/lbm_solver.f90 \
+	$(SRC_DIR)/lbm_logger.f90 \
 	$(SRC_DIR)/lbm.f90
 
 OBJ = $(SRC:$(SRC_DIR)/%.f90=$(OBJ_DIR)/%.obj)
 
 
-# OPTIMIZED (FAST) SLIDING LID
-
-SRC_FAST_DIR = src/fast
-BIN_FAST_DIR = bin/fast
-OBJ_FAST_DIR = bin/fast/obj
-MOD_FAST_DIR = bin/fast/mods
-OBJ_FAST_WIN = bin\fast\obj
-MOD_FAST_WIN = bin\fast\mods
-TARGET_FAST  = fast.exe
-
-SRC_FAST = 								\
-	$(SRC_FAST_DIR)/lbm_fast_global.f90 \
-	$(SRC_FAST_DIR)/lbm_fast_solver.f90 \
-	$(SRC_FAST_DIR)/lbm_fast_logger.f90 \
-	$(SRC_FAST_DIR)/lbm_fast.f90
-
-OBJ_FAST = $(SRC_FAST:$(SRC_FAST_DIR)/%.f90=$(OBJ_FAST_DIR)/%.obj)
-
-
-
-all: dirs $(TARGET) $(TARGET_FAST)
-main: dirs $(TARGET)
-fast: dirs $(TARGET_FAST)
-
+all: dirs $(TARGET)
 
 # create directories if not exist
 dirs:
-	@if not exist "$(OBJ_WIN)" mkdir "$(OBJ_WIN)"
-	@if not exist "$(MOD_WIN)" mkdir "$(MOD_WIN)"
-	@if not exist "$(OBJ_FAST_WIN)" mkdir "$(OBJ_FAST_WIN)"
-	@if not exist "$(MOD_FAST_WIN)" mkdir "$(MOD_FAST_WIN)"
-	@for %%d in ($(OUT_FAST_WIN)) do if not exist "%%d" mkdir "%%d"
-
-
+	@if not exist "$(OBJ_DIR)" mkdir "$(OBJ_DIR)"
+	@if not exist "$(MOD_DIR)" mkdir "$(MOD_DIR)"
+	@for %%d in ($(OUT_DIRS)) do if not exist "%%d" mkdir "%%d"
 
 # Linking
 $(TARGET): $(OBJ)
@@ -87,28 +51,15 @@ $(TARGET): $(OBJ)
 $(OBJ_DIR)/%.obj: $(SRC_DIR)/%.f90
 	$(FC) /module:$(MOD_DIR) $(FC_FLAGS) /c $< /object:$@
 
-
-# Linking optimized (fast) version
-$(TARGET_FAST): $(OBJ_FAST)
-	$(FC) $(FC_FLAGS) $(OBJ_FAST) /exe:$@
-
-# Compilation optimized (fast) version
-$(OBJ_FAST_DIR)/%.obj: $(SRC_FAST_DIR)/%.f90
-	$(FC) /module:$(MOD_FAST_DIR) $(FC_FLAGS) /c $< /object:$@
-
-
-clean_out:
-	@for %%d in ($(OUT_FAST_WIN)) do del /Q "%%d\*"
-
+# Clear outputs
+clean-out:
+	@for %%d in ($(OUT_DIRS)) do del /Q "%%d\*"
 
 # Remove build files
 clean:
-	- del /Q "$(OBJ_WIN)\*.obj"
-	- del /Q "$(MOD_WIN)\*.mod"
+	- del /Q "$(OBJ_DIR)\*.obj"
+	- del /Q "$(MOD_DIR)\*.mod"
 	- del /Q "$(TARGET)"
-	- del /Q "$(OBJ_FAST_WIN)\*.obj"
-	- del /Q "$(MOD_FAST_WIN)\*.mod"
-	- del /Q "$(TARGET_FAST)"
 
 print:
 	@echo OBJ=$(OBJ)

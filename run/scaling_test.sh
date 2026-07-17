@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=lbm-fast-Re5000
+#SBATCH --job-name=lbm-fast-scaling-test
 #SBATCH --partition=cpu_il
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --ntasks-per-node=64
-#SBATCH --time=02:00:00
+#SBATCH --time=00:30:00
 #SBATCH --mem-per-cpu=256mb
 #SBATCH --output=output.%j.out
 #SBATCH --error=error.%j.err
@@ -20,12 +20,12 @@ module load mpi/impi
 
 export FOR_COARRAY_CONFIG_FILE=./lbm.conf
 
-EXE=./fast
+EXE=../bin/lbm
 
 echo "Compiling program ..."
 
 make -f Makefile.linux clean
-make -f Makefile.linux fast
+make -f Makefile.linux
 
 rc=$?
 if [ $rc -ne 0 ]; then
@@ -33,18 +33,20 @@ if [ $rc -ne 0 ]; then
     exit $rc
 fi
 
-n=64
+for i in {1..11}; do
+    n=$((i*i))
 
-echo "Running experiment with $n images"
+    echo "Running experiment with $n images"
 
-echo "-genvall -genv I_MPI_FABRICS=shm:ofi -n $n $EXE" > "$FOR_COARRAY_CONFIG_FILE"
+    echo "-genvall -genv I_MPI_FABRICS=shm:ofi -n $n $EXE" > "$FOR_COARRAY_CONFIG_FILE"
 
-$EXE
+    $EXE
 
-rc=$?
-if [ $rc -ne 0 ]; then
-    echo "Experiment with $n images failed (exit code $rc)"
-    exit $rc
-fi
+    rc=$?
+    if [ $rc -ne 0 ]; then
+        echo "Experiment with $n images failed (exit code $rc)"
+        exit $rc
+    fi
+done
 
 echo "All experiments completed successfully."

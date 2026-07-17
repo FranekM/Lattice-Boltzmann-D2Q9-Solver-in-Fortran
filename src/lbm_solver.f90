@@ -1,8 +1,8 @@
 module lbm_d2q9_solver
-    use lbm_d2q9_consts
-    use lbm_d2q9_types
+	use lbm_d2q9_global
+	implicit none
 
-    implicit none
+	! VARIABLES
 
     integer :: W, S, E, N                             !! border layers indices
     integer :: gW, gS, gE, gN                         !! ghost layers indices
@@ -10,221 +10,21 @@ module lbm_d2q9_solver
     integer :: Iy, Ix                                 !! image y and x indices
     integer :: Niy, Nix                               !! number of image y and x indices
 
-    real(dp), private :: omega, dpy, dpx              !! simulation parameters
-    real(dp), private :: one_minus_omega              !!
-
     real(dp), allocatable :: lattice(:, :, :)[:, :]   !! distribution function
     real(dp), allocatable :: sbuffer(:, :, :)         !! streaming buffer
 
-    type(boundry_condition), private :: bc_list(MAX_BC_COUNT)
-    integer, private :: bc_count = 0
 
 contains
 
-    real(dp) function measure_rho(y, x)
-        integer, intent(in) :: x, y
-        
-        measure_rho = sum(lattice(:, y, x))
-    end function
 
-    real(dp) function measure_u(component, y, x, rho)
-        integer, intent(in) :: component, y, x
-        real(dp), intent(in) :: rho
-
-        measure_u = sum(lattice(:, y, x) * c(component, :)) / rho
-    end function
-
-    real(dp) function pressure_acc(dpc, length, rho)
-        real(dp), intent(in) :: dpc, rho
-        integer, intent(in) :: length
-        real(dp) :: pressure_force
-
-        pressure_force = dpc / length
-
-        pressure_acc = pressure_force / (2.0_dp * rho) ! coś mnie trafi !!!
-    end function
-
-    ! TODO: avoid creation of temporary arrays
-    function feq(uy, ux, rho)
-        real(dp), intent(in) :: rho, uy, ux
-        real(dp) :: feq(0:Nq-1)
-        real(dp) :: cu(0:Nq-1)
-        real(dp) :: u2
-        
-        cu = c(CY, :) * uy + c(CX, :) * ux
-        u2 = uy*uy + ux*ux
-        feq = weights * rho * (1.0d0 + 3.0d0*cu + 4.5d0*cu*cu - 1.5d0*u2)
-    end function
-
-
-    ! TODO: simplify access helpers and move them to another module
-    integer function local_to_global_x(x, imx)
-        integer, intent(in) :: x
-        integer, optional, intent(in) :: imx
-        integer :: im_x
-
-        if (.not. present(imx)) then
-            im_x = Ix
-        else
-            im_x = imx
-        end if
-        local_to_global_x = (im_x - 1) * Nx + x
-    end function
-
-    integer function local_to_global_y(y, imy)
-        integer, intent(in) :: y
-        integer, optional, intent(in) :: imy
-        integer :: im_y
-
-        if (.not. present(imy)) then
-            im_y = Iy
-        else
-            im_y = imy
-        end if
-        local_to_global_y = (im_y - 1) * Ny + y
-    end function
-
-    integer function global_to_local_x(x, imx)
-        integer, intent(in) :: x
-        integer, optional, intent(in) :: imx
-        integer :: im_x
-
-        if (.not. present(imx)) then
-            im_x = Ix
-        else
-            im_x = imx
-        end if
-        global_to_local_x = x - (im_x - 1) * Nx
-    end function
-
-    integer function global_to_local_y(y, imy)
-        integer, intent(in) :: y
-        integer, optional, intent(in) :: imy
-        integer :: im_y
-
-        if (.not. present(imy)) then
-            im_y = Iy
-        else
-            im_y = imy
-        end if
-        global_to_local_y = y - (im_y - 1) * Ny
-    end function
-
-    logical function is_global_x_in(x, imx)
-        integer, intent(in) :: x
-        integer, optional, intent(in) :: imx
-        integer :: im_x
-        integer :: x_begin, x_end
-
-        if (.not. present(imx)) then
-            im_x = Ix
-        else
-            im_x = imx
-        end if
-        x_begin = (im_x - 1) * Nx + 1
-		x_end = im_x * Nx
-		is_global_x_in = x >= x_begin .and. x <= x_end
-    end function
-
-    logical function is_global_y_in(y, imy)
-        integer, intent(in) :: y
-        integer, optional, intent(in) :: imy
-        integer :: im_y
-        integer :: y_begin, y_end
-
-        if (.not. present(imy)) then
-            im_y = Iy
-        else
-            im_y = imy
-        end if
-        y_begin = (im_y - 1) * Ny + 1
-		y_end = im_y * Ny
-		is_global_y_in = y >= y_begin .and. y <= y_end
-    end function
-
-
-    ! TODO: move boundy setup helpers to another module
-    function is_global_boundry(place) result(is)
-		integer, intent(in) :: place
-        logical :: is
-
-        select case(place)
-            case (S_WALL)
-                is = (Iy == 1)
-            case (N_WALL)
-                is = (Iy == Niy)
-            case (W_WALL)
-                is = (Ix == 1)
-            case (E_WALL)
-                is = (Ix == Nix)
-            case (NW_CORNER)
-                is = (Iy == Niy .or. Ix == 1)
-            case (SW_CORNER)
-                is = (Iy == 1 .or. Ix == 1)
-            case (SE_CORNER)
-                is = (Iy == 1 .or. Ix == Nix)
-            case (NE_CORNER)
-                is = (Iy == Niy .or. Ix == Nix)
-            case default
-                is = .false.
-        end select
-	end function
-
-    function is_local_corner(place) result(is)
-        integer, intent(in) :: place
-        logical :: is
-
-        select case(place)
-            case (NW_CORNER)
-                is = .not. (Iy == Niy .and. Ix == 1)
-            case (SW_CORNER)
-                is = .not. (Iy == 1 .and. Ix == 1)
-            case (SE_CORNER)
-                is = .not. (Iy == 1 .and. Ix == Nix)
-            case (NE_CORNER)
-                is = .not. (Iy == Niy .and. Ix == Nix)
-            case default
-                is = .false.
-        end select
-    end function
-
-    subroutine copy_bc(bc_in, bc_out, places)
-        type(boundry_condition), intent(in) :: bc_in
-        type(boundry_condition), intent(out) :: bc_out
-        integer, optional, intent(in) :: places
-
-        bc_out%postproc => bc_in%postproc
-        bc_out%apply    => bc_in%apply
-        bc_out%speed    =  bc_in%speed
-        bc_out%places   =  bc_in%places
-
-        if (present(places)) bc_out%places = places
-    end subroutine
-
-    subroutine copy_bc_from(bc_list_in, bc_count_in, place_from, bc_out, places)
-        type(boundry_condition), intent(in) :: bc_list_in(MAX_BC_COUNT)
-        type(boundry_condition), intent(out) :: bc_out
-        integer, intent(in) :: bc_count_in, place_from, places
-        integer :: bc
-
-        do bc = 1, bc_count_in
-            if (mask(bc_list_in(bc)%places, place_from)) then
-                call copy_bc(bc_list_in(bc), bc_out, places)
-                exit
-            end if
-        end do
-    end subroutine
-
-
-    subroutine init_lbm(size_y, size_x, set_omega, set_dpy, set_dpx)
-        integer, intent(in) :: size_y, size_x
-        real(dp), intent(in) :: set_omega, set_dpy, set_dpx
+	subroutine init_lbm()
+		integer :: q
 
         Niy = int(sqrt(real(num_images())))
         Nix = num_images() / Niy
 
-        Ny = size_y / Niy
-        Nx = size_x / Niy
+        Ny = LATTICE_SIZE / Niy
+        Nx = LATTICE_SIZE / Nix
 
         W = 1
         S = 1
@@ -237,133 +37,34 @@ contains
         gN = N + 1
 
         sync all
-
         allocate(lattice(0:Nq-1, gS:gN, gW:gE)[Niy, *])
         allocate(sbuffer(0:Nq-1, gS:gN, gW:gE))
+		sync all
 
-        sync all
+        Iy = this_image(lattice, 1)
+        Ix = this_image(lattice, 2)
 
-        Iy  = this_image(lattice, 1)
-        Ix  = this_image(lattice, 2)
-
-        omega = set_omega
-        one_minus_omega = (1.0_dp - omega)
-        dpy = set_dpy
-        dpx = set_dpx
-
-        lattice = INIT_VAL
-        sbuffer = INIT_VAL
-    end subroutine
-
-    subroutine set_initial_condition(rho, uy, ux)
-        class(scalar_field), intent(in) :: rho, uy, ux
-        integer :: x, y     !! loop indices
-        integer :: gx, gy   !! global x, y (across images)
-
-        do x = W, E
-            gx = (Ix - 1) * Nx + x
-            do y = S, N
-                gy = (Iy - 1) * Ny + y
-                lattice(:, y, x) = feq(uy%eval(gy, gx), ux%eval(gy, gx), rho%eval(gy, gx))
-            end do
+        do q = 0, Nq-1
+			lattice(q, :, :) = weights(q) * INIT_RHO
         end do
     end subroutine
 
-    subroutine set_boundry_condition(g_bc_list, g_bc_count, internal_bc)
-        type(boundry_condition), intent(in) :: g_bc_list(MAX_BC_COUNT)
-        type(boundry_condition), intent(in) :: internal_bc
-        integer, intent(in) :: g_bc_count
-        integer :: place, shift, bc
-
-		place = 1
-        do shift = 0, 7
-            place = ishft(1, shift)
-            bc_count = bc_count + 1
-
-            if (is_global_boundry(place)) then
-                if (is_local_corner(place)) then
-                    select case(place)
-                        case (NW_CORNER)
-                            if (Ix == 1) &
-                                call copy_bc_from(g_bc_list, g_bc_count, W_WALL, bc_list(bc_count), place)
-                            if (Iy == Niy) &
-                                call copy_bc_from(g_bc_list, g_bc_count, N_WALL, bc_list(bc_count), place)
-                        case (SW_CORNER)
-                            if (Ix == 1) &
-                                call copy_bc_from(g_bc_list, g_bc_count, W_WALL, bc_list(bc_count), place)
-                            if (Iy == 1) &
-                                call copy_bc_from(g_bc_list, g_bc_count, S_WALL, bc_list(bc_count), place)
-                        case (SE_CORNER)
-                            if (Ix == Nix) &
-                                call copy_bc_from(g_bc_list, g_bc_count, E_WALL, bc_list(bc_count), place)
-                            if (Iy == 1) &
-                                call copy_bc_from(g_bc_list, g_bc_count, S_WALL, bc_list(bc_count), place)
-                        case (NE_CORNER)
-                            if (Ix == Nix) &
-                                call copy_bc_from(g_bc_list, g_bc_count, E_WALL, bc_list(bc_count), place)
-                            if (Iy == Niy) &
-                                call copy_bc_from(g_bc_list, g_bc_count, N_WALL, bc_list(bc_count), place)
-                    end select
-                else
-                    do bc = 1, g_bc_count
-                        if (mask(g_bc_list(bc)%places, place)) then
-                            call copy_bc(g_bc_list(bc), bc_list(bc_count), place)
-                            exit
-                        end if
-                    end do
-                end if
-
-            else
-                call copy_bc(internal_bc, bc_list(bc_count), place)
-            end if
-        end do
-    end subroutine
-
-    subroutine end_lbm()
-        integer :: bc
-
-        W = -1
-        S = -1
-        E = -1
-        N = -1
-        gW = -1
-        gS = -1
-        gE = -1
-        gN = -1
-        Ny = -1
-        Nx = -1
-        Iy = -1
-        Ix = -1
-        Niy = -1
-        Nix = -1
-        omega = -1.0
-        dpy = -1.0
-        dpx = -1.0
-
-        bc_count = 0
-        do bc = 1, MAX_BC_COUNT
-            nullify(bc_list(bc)%apply)
-            nullify(bc_list(bc)%postproc)
-            bc_list(bc)%speed = 0.0_dp
-            bc_list(bc)%places = 0
-        end do
-
-        sync all
-
+	subroutine end_lbm()
+		sync all
         if (allocated(lattice)) deallocate(lattice)
         if (allocated(sbuffer)) deallocate(sbuffer)
-    end subroutine
+	end subroutine
 
 
-    subroutine collision_step()
+	subroutine collision_step()
         integer :: x, y
         real(dp) :: rho, inv_rho, uy, ux
         real(dp) :: feq, au2, cu
         real(dp) :: f(0:Nq-1)
         integer :: q
 
-        do y = S, N
-            do x = W, E
+        do x = W, E
+            do y = S, N
                 rho = 0.0_dp
                 uy = 0.0_dp
                 ux = 0.0_dp
@@ -384,31 +85,482 @@ contains
                 do q = 0, Nq-1
                     cu = c_dp(CY, q) * uy + c_dp(CX, q) * ux
                     feq = weights(q) * rho * (1.0_dp + 3.0_dp*cu + 4.5_dp*cu*cu + au2)
-                    lattice(q, y, x) = one_minus_omega * f(q) + omega * feq
+                    lattice(q, y, x) = ONE_MINUS_OMEGA * f(q) + OMEGA * feq
                 end do
             end do
         end do
     end subroutine
 
     subroutine streaming_step()
-        integer :: q
+        integer :: y, x, q
 
-        do q = 0, Nq-1
-            sbuffer(q, S+c(CY, q):N+c(CY,q), W+c(CX,q):E+c(CX,q)) = lattice(q, S:N, W:E)
+        call cpu_time(st2)
+        do x = W, E
+	        do y = S, N
+		        do q = 0, Nq-1
+		            sbuffer(q, y+c(CY, q), x+c(CX, q)) = lattice(q, y, x)   ! push streaming - continous reads
+		            ! Potential optimization: pull straming (requires rewering communication)
+			        ! sbuffer(q, y, x) = lattice(q, y+c(CY, q), x+c(CX, q))   ! pull streaming - continous writes
+		        end do
+	        end do
         end do
+        call cpu_time(et2)
+        total_slide_time = total_slide_time + (et2 - st2)
 
+
+        call cpu_time(st2)
         lattice = sbuffer
+	    call cpu_time(et2)
+	    total_copy_time = total_copy_time + (et2 - st2)
     end subroutine
 
     subroutine communication_step()
-        integer :: i ! loop index
 
-        do i = 1, bc_count
-            if (associated(bc_list(i)%apply)) &
-                call bc_list(i)%apply(bc_list(i)%places)
-            if (associated(bc_list(i)%postproc)) &
-                call bc_list(i)%postproc(bc_list(i)%places, bc_list(i)%speed)
-        end do
+	    if (num_images() == 1) then
+		    call communication_ONLY()
+
+	    else if (Iy == 1 .and. Ix /= 1 .and. Ix /= Nix) then
+		    call communication_S()
+
+	    else if (Iy == Niy .and. Ix /= 1 .and. Ix /= Nix) then
+		    call communication_N()
+
+	    else if (Ix == 1 .and. Iy /= 1 .and. Iy /= Niy) then
+		    call communication_W()
+
+	    else if (Ix == Nix .and. Iy /= 1 .and. Iy /= Niy) then
+		    call communication_E()
+
+	    else if (Iy == 1 .and. Ix == 1) then
+		    call communication_SW()
+
+	    else if (Iy == Niy .and. Ix == 1) then
+		    call communication_NW()
+
+	    else if (Iy == Niy .and. Ix == Nix) then
+		    call communication_NE()
+
+		else if (Iy == 1 .and. Ix == Nix) then
+			call communication_SE()
+
+	    else
+		    call communication_IN()
+
+	    end if
+
     end subroutine
+
+
+	subroutine communication_ONLY()
+		real(dp) :: rho_wall
+		integer :: x
+
+		! N wall
+		lattice(QS,  N, W:E) = lattice(QN,  gN, W:E   )
+		lattice(QSE, N, W:E) = lattice(QNW, gN, gW:E-1)
+		lattice(QSW, N, W:E) = lattice(QNE, gN, W+1:gE)
+
+		! E wall
+		lattice(QW,  S:N, E) = lattice(QE,  S:N,    gE)
+		lattice(QSW, S:N, E) = lattice(QNE, S+1:gN, gE)
+		lattice(QNW, S:N, E) = lattice(QSE, gS:N-1, gE)
+
+		! S wall
+		lattice(QN,  S, W:E) = lattice(QS,  gS, W:E   )
+		lattice(QNE, S, W:E) = lattice(QSW, gS, gW:E-1)
+		lattice(QNW, S, W:E) = lattice(QSE, gS, W+1:gE)
+
+		! W wall
+		lattice(QE,  S:N, W) = lattice(QW,  S:N,    gW)
+		lattice(QSE, S:N, W) = lattice(QNW, S+1:gN, gW)
+		lattice(QNE, S:N, W) = lattice(QSW, gS:N-1, gW)
+
+		! moving wall correction
+		do x = W, E
+	        rho_wall = sum(lattice(:, N, x))
+			lattice(QS,  N, x) = lattice(QS,  N, x) - OFFSET_QN  * rho_wall
+	        lattice(QSE, N, x) = lattice(QSE, N, x) - OFFSET_QNW * rho_wall
+			lattice(QSW, N, x) = lattice(QSW, N, x) - OFFSET_QNE * rho_wall
+	    end do
+
+	end subroutine
+
+	subroutine communication_N()
+		integer :: src_Ix, src_Iy, x
+		real(dp) :: rho_wall
+
+		! N wall
+		lattice(QS,  N, W:E) = lattice(QN,  gN, W:E   )
+		lattice(QSE, N, W:E) = lattice(QNW, gN, gW:E-1)
+		lattice(QSW, N, W:E) = lattice(QNE, gN, W+1:gE)
+
+		! moving wall correction
+		do x = W, E
+	        rho_wall = sum(lattice(:, N, x))
+			lattice(QS,  N, x) = lattice(QS,  N, x) - OFFSET_QN  * rho_wall
+	        lattice(QSE, N, x) = lattice(QSE, N, x) - OFFSET_QNW * rho_wall
+			lattice(QSW, N, x) = lattice(QSW, N, x) - OFFSET_QNE * rho_wall
+	    end do
+
+		! W wall internal communication
+		src_Iy = Iy + c(CY, QW)
+		src_Ix = Ix + c(CX, QW)
+        lattice(QE,  S:N,   W) = lattice(QE,  S:N,   gE)[src_Iy, src_Ix]
+        lattice(QNE, S+1:N, W) = lattice(QNE, S+1:N, gE)[src_Iy, src_Ix]
+        lattice(QSE, S:N-1, W) = lattice(QSE, S:N-1, gE)[src_Iy, src_Ix]
+
+		! E wall internal communication
+		src_Iy = Iy + c(CY, QE)
+		src_Ix = Ix + c(CX, QE)
+        lattice(QW,  S:N,   E) = lattice(QW,  S:N,   gW)[src_Iy, src_Ix]
+        lattice(QNW, S+1:N, E) = lattice(QNW, S+1:N, gW)[src_Iy, src_Ix]
+        lattice(QSW, S:N-1, E) = lattice(QSW, S:N-1, gW)[src_Iy, src_Ix]
+
+		! S wall internal communication
+		src_Iy = Iy + c(CY, QS)
+		src_Ix = Ix + c(CX, QS)
+        lattice(QN,  S, W:E  ) = lattice(QN,  gN, W:E  )[src_Iy, src_Ix]
+        lattice(QNE, S, W+1:E) = lattice(QNE, gN, W+1:E)[src_Iy, src_Ix]
+        lattice(QNW, S, W:E-1) = lattice(QNW, gN, W:E-1)[src_Iy, src_Ix]
+
+		! SW corner internal communication
+		src_Iy = Iy + c(CY, QSW)
+		src_Ix = Ix + c(CX, QSW)
+        lattice(QNE, S, W) = lattice(QNE, gN, gE)[src_Iy, src_Ix]
+
+		! SE corner internal communication
+		src_Iy = Iy + c(CY, QSE)
+		src_Ix = Ix + c(CX, QSE)
+		lattice(QNW, S, E) = lattice(QNW, gN, gW)[src_Iy, src_Ix]
+	end subroutine
+
+	subroutine communication_E()
+		integer :: src_Ix, src_Iy
+
+		! E wall
+		lattice(QW,  S:N, E) = lattice(QE,  S:N,    gE)
+		lattice(QSW, S:N, E) = lattice(QNE, S+1:gN, gE)
+		lattice(QNW, S:N, E) = lattice(QSE, gS:N-1, gE)
+
+		! W wall internal communication
+		src_Iy = Iy + c(CY, QW)
+		src_Ix = Ix + c(CX, QW)
+        lattice(QE,  S:N,   W) = lattice(QE,  S:N,   gE)[src_Iy, src_Ix]
+        lattice(QNE, S+1:N, W) = lattice(QNE, S+1:N, gE)[src_Iy, src_Ix]
+        lattice(QSE, S:N-1, W) = lattice(QSE, S:N-1, gE)[src_Iy, src_Ix]
+
+		! S wall internal communication
+		src_Iy = Iy + c(CY, QS)
+		src_Ix = Ix + c(CX, QS)
+        lattice(QN,  S, W:E  ) = lattice(QN,  gN, W:E  )[src_Iy, src_Ix]
+        lattice(QNE, S, W+1:E) = lattice(QNE, gN, W+1:E)[src_Iy, src_Ix]
+        lattice(QNW, S, W:E-1) = lattice(QNW, gN, W:E-1)[src_Iy, src_Ix]
+
+		! N wall internal communication
+		src_Iy = Iy + c(CY, QN)
+		src_Ix = Ix + c(CX, QN)
+        lattice(QS,  N, W:E  ) = lattice(QS,  gS, W:E  )[src_Iy, src_Ix]
+        lattice(QSW, N, W:E-1) = lattice(QSW, gS, W:E-1)[src_Iy, src_Ix]
+        lattice(QSE, N, W+1:E) = lattice(QSE, gS, W+1:E)[src_Iy, src_Ix]
+
+		! NW corner internal communication
+		src_Iy = Iy + c(CY, QNW)
+		src_Ix = Ix + c(CX, QNW)
+        lattice(QSE, N, W) = lattice(QSE, gS, gE)[src_Iy, src_Ix]
+
+		! SW corner internal communication
+		src_Iy = Iy + c(CY, QSW)
+		src_Ix = Ix + c(CX, QSW)
+        lattice(QNE, S, W) = lattice(QNE, gN, gE)[src_Iy, src_Ix]
+
+	end subroutine
+
+	subroutine communication_S()
+		integer :: src_Ix, src_Iy
+
+		! S wall
+		lattice(QN,  S, W:E) = lattice(QS,  gS, W:E   )
+		lattice(QNE, S, W:E) = lattice(QSW, gS, gW:E-1)
+		lattice(QNW, S, W:E) = lattice(QSE, gS, W+1:gE)
+
+		! W wall internal communication
+		src_Iy = Iy + c(CY, QW)
+		src_Ix = Ix + c(CX, QW)
+        lattice(QE,  S:N,   W) = lattice(QE,  S:N,   gE)[src_Iy, src_Ix]
+        lattice(QNE, S+1:N, W) = lattice(QNE, S+1:N, gE)[src_Iy, src_Ix]
+        lattice(QSE, S:N-1, W) = lattice(QSE, S:N-1, gE)[src_Iy, src_Ix]
+
+		! E wall internal communication
+		src_Iy = Iy + c(CY, QE)
+		src_Ix = Ix + c(CX, QE)
+        lattice(QW,  S:N,   E) = lattice(QW,  S:N,   gW)[src_Iy, src_Ix]
+        lattice(QNW, S+1:N, E) = lattice(QNW, S+1:N, gW)[src_Iy, src_Ix]
+        lattice(QSW, S:N-1, E) = lattice(QSW, S:N-1, gW)[src_Iy, src_Ix]
+
+		! N wall internal communication
+		src_Iy = Iy + c(CY, QN)
+		src_Ix = Ix + c(CX, QN)
+        lattice(QS,  N, W:E  ) = lattice(QS,  gS, W:E  )[src_Iy, src_Ix]
+        lattice(QSW, N, W:E-1) = lattice(QSW, gS, W:E-1)[src_Iy, src_Ix]
+        lattice(QSE, N, W+1:E) = lattice(QSE, gS, W+1:E)[src_Iy, src_Ix]
+
+		! NE corner internal communication
+		src_Iy = Iy + c(CY, QNE)
+		src_Ix = Ix + c(CX, QNE)
+		lattice(QSW, N, E) = lattice(QSW, gS, gW)[src_Iy, src_Ix]
+
+		! NW corner internal communication
+		src_Iy = Iy + c(CY, QNW)
+		src_Ix = Ix + c(CX, QNW)
+        lattice(QSE, N, W) = lattice(QSE, gS, gE)[src_Iy, src_Ix]
+
+	end subroutine
+
+	subroutine communication_W()
+		integer :: src_Ix, src_Iy
+
+		! W wall
+		lattice(QE,  S:N, W) = lattice(QW,  S:N,    gW)
+		lattice(QSE, S:N, W) = lattice(QNW, S+1:gN, gW)
+		lattice(QNE, S:N, W) = lattice(QSW, gS:N-1, gW)
+
+		! E wall internal communication
+		src_Iy = Iy + c(CY, QE)
+		src_Ix = Ix + c(CX, QE)
+        lattice(QW,  S:N,   E) = lattice(QW,  S:N,   gW)[src_Iy, src_Ix]
+        lattice(QNW, S+1:N, E) = lattice(QNW, S+1:N, gW)[src_Iy, src_Ix]
+        lattice(QSW, S:N-1, E) = lattice(QSW, S:N-1, gW)[src_Iy, src_Ix]
+
+		! S wall internal communication
+		src_Iy = Iy + c(CY, QS)
+		src_Ix = Ix + c(CX, QS)
+        lattice(QN,  S, W:E  ) = lattice(QN,  gN, W:E  )[src_Iy, src_Ix]
+        lattice(QNE, S, W+1:E) = lattice(QNE, gN, W+1:E)[src_Iy, src_Ix]
+        lattice(QNW, S, W:E-1) = lattice(QNW, gN, W:E-1)[src_Iy, src_Ix]
+
+		! N wall internal communication
+		src_Iy = Iy + c(CY, QN)
+		src_Ix = Ix + c(CX, QN)
+        lattice(QS,  N, W:E  ) = lattice(QS,  gS, W:E  )[src_Iy, src_Ix]
+        lattice(QSW, N, W:E-1) = lattice(QSW, gS, W:E-1)[src_Iy, src_Ix]
+        lattice(QSE, N, W+1:E) = lattice(QSE, gS, W+1:E)[src_Iy, src_Ix]
+
+		! NE corner internal communication
+		src_Iy = Iy + c(CY, QNE)
+		src_Ix = Ix + c(CX, QNE)
+		lattice(QSW, N, E) = lattice(QSW, gS, gW)[src_Iy, src_Ix]
+
+		! SE corner internal communication
+		src_Iy = Iy + c(CY, QSE)
+		src_Ix = Ix + c(CX, QSE)
+		lattice(QNW, S, E) = lattice(QNW, gN, gW)[src_Iy, src_Ix]
+
+	end subroutine
+
+	subroutine communication_NE()
+		integer :: src_Ix, src_Iy, x
+		real(dp) :: rho_wall
+
+		! N wall
+		lattice(QS,  N, W:E) = lattice(QN,  gN, W:E   )
+		lattice(QSE, N, W:E) = lattice(QNW, gN, gW:E-1)
+		lattice(QSW, N, W:E) = lattice(QNE, gN, W+1:gE)
+
+		! E wall
+		lattice(QW,  S:N, E) = lattice(QE,  S:N,    gE)
+		lattice(QSW, S:N, E) = lattice(QNE, S+1:gN, gE)
+		lattice(QNW, S:N, E) = lattice(QSE, gS:N-1, gE)
+
+		! moving wall correction
+		do x = W, E
+	        rho_wall = sum(lattice(:, N, x))
+			lattice(QS,  N, x) = lattice(QS,  N, x) - OFFSET_QN  * rho_wall
+	        lattice(QSE, N, x) = lattice(QSE, N, x) - OFFSET_QNW * rho_wall
+			lattice(QSW, N, x) = lattice(QSW, N, x) - OFFSET_QNE * rho_wall
+	    end do
+
+		! W wall internal communication
+		src_Iy = Iy + c(CY, QW)
+		src_Ix = Ix + c(CX, QW)
+        lattice(QE,  S:N,   W) = lattice(QE,  S:N,   gE)[src_Iy, src_Ix]
+        lattice(QNE, S+1:N, W) = lattice(QNE, S+1:N, gE)[src_Iy, src_Ix]
+        lattice(QSE, S:N-1, W) = lattice(QSE, S:N-1, gE)[src_Iy, src_Ix]
+
+		! S wall internal communication
+		src_Iy = Iy + c(CY, QS)
+		src_Ix = Ix + c(CX, QS)
+        lattice(QN,  S, W:E  ) = lattice(QN,  gN, W:E  )[src_Iy, src_Ix]
+        lattice(QNE, S, W+1:E) = lattice(QNE, gN, W+1:E)[src_Iy, src_Ix]
+        lattice(QNW, S, W:E-1) = lattice(QNW, gN, W:E-1)[src_Iy, src_Ix]
+
+		! SW corner internal communication
+		src_Iy = Iy + c(CY, QSW)
+		src_Ix = Ix + c(CX, QSW)
+        lattice(QNE, S, W) = lattice(QNE, gN, gE)[src_Iy, src_Ix]
+	end subroutine
+
+	subroutine communication_NW()
+		integer :: src_Ix, src_Iy, x
+		real(dp) :: rho_wall
+
+		! N wall
+		lattice(QS,  N, W:E) = lattice(QN,  gN, W:E   )
+		lattice(QSE, N, W:E) = lattice(QNW, gN, gW:E-1)
+		lattice(QSW, N, W:E) = lattice(QNE, gN, W+1:gE)
+
+		! W wall
+		lattice(QE,  S:N, W) = lattice(QW,  S:N,    gW)
+		lattice(QSE, S:N, W) = lattice(QNW, S+1:gN, gW)
+		lattice(QNE, S:N, W) = lattice(QSW, gS:N-1, gW)
+
+		! moving wall correction
+		do x = W, E
+	        rho_wall = sum(lattice(:, N, x))
+			lattice(QS,  N, x) = lattice(QS,  N, x) - OFFSET_QN  * rho_wall
+	        lattice(QSE, N, x) = lattice(QSE, N, x) - OFFSET_QNW * rho_wall
+			lattice(QSW, N, x) = lattice(QSW, N, x) - OFFSET_QNE * rho_wall
+	    end do
+
+		! E wall internal communication
+		src_Iy = Iy + c(CY, QE)
+		src_Ix = Ix + c(CX, QE)
+        lattice(QW,  S:N,   E) = lattice(QW,  S:N,   gW)[src_Iy, src_Ix]
+        lattice(QNW, S+1:N, E) = lattice(QNW, S+1:N, gW)[src_Iy, src_Ix]
+        lattice(QSW, S:N-1, E) = lattice(QSW, S:N-1, gW)[src_Iy, src_Ix]
+
+		! S wall internal communication
+		src_Iy = Iy + c(CY, QS)
+		src_Ix = Ix + c(CX, QS)
+        lattice(QN,  S, W:E  ) = lattice(QN,  gN, W:E  )[src_Iy, src_Ix]
+        lattice(QNE, S, W+1:E) = lattice(QNE, gN, W+1:E)[src_Iy, src_Ix]
+        lattice(QNW, S, W:E-1) = lattice(QNW, gN, W:E-1)[src_Iy, src_Ix]
+
+		! SE corner internal communication
+		src_Iy = Iy + c(CY, QSE)
+		src_Ix = Ix + c(CX, QSE)
+		lattice(QNW, S, E) = lattice(QNW, gN, gW)[src_Iy, src_Ix]
+
+	end subroutine
+
+	subroutine communication_SE()
+		integer :: src_Ix, src_Iy
+
+		! S wall
+		lattice(QN,  S, W:E) = lattice(QS,  gS, W:E   )
+		lattice(QNE, S, W:E) = lattice(QSW, gS, gW:E-1)
+		lattice(QNW, S, W:E) = lattice(QSE, gS, W+1:gE)
+
+		! E wall
+		lattice(QW,  S:N, E) = lattice(QE,  S:N,    gE)
+		lattice(QSW, S:N, E) = lattice(QNE, S+1:gN, gE)
+		lattice(QNW, S:N, E) = lattice(QSE, gS:N-1, gE)
+
+		! W wall internal communication
+		src_Iy = Iy + c(CY, QW)
+		src_Ix = Ix + c(CX, QW)
+        lattice(QE,  S:N,   W) = lattice(QE,  S:N,   gE)[src_Iy, src_Ix]
+        lattice(QNE, S+1:N, W) = lattice(QNE, S+1:N, gE)[src_Iy, src_Ix]
+        lattice(QSE, S:N-1, W) = lattice(QSE, S:N-1, gE)[src_Iy, src_Ix]
+
+		! N wall internal communication
+		src_Iy = Iy + c(CY, QN)
+		src_Ix = Ix + c(CX, QN)
+        lattice(QS,  N, W:E  ) = lattice(QS,  gS, W:E  )[src_Iy, src_Ix]
+        lattice(QSW, N, W:E-1) = lattice(QSW, gS, W:E-1)[src_Iy, src_Ix]
+        lattice(QSE, N, W+1:E) = lattice(QSE, gS, W+1:E)[src_Iy, src_Ix]
+
+		! NW corner internal communication
+		src_Iy = Iy + c(CY, QNW)
+		src_Ix = Ix + c(CX, QNW)
+        lattice(QSE, N, W) = lattice(QSE, gS, gE)[src_Iy, src_Ix]
+
+	end subroutine
+
+	subroutine communication_SW()
+		integer :: src_Ix, src_Iy
+
+		! S wall
+		lattice(QN,  S, W:E) = lattice(QS,  gS, W:E   )
+		lattice(QNE, S, W:E) = lattice(QSW, gS, gW:E-1)
+		lattice(QNW, S, W:E) = lattice(QSE, gS, W+1:gE)
+
+		! W wall
+		lattice(QE,  S:N, W) = lattice(QW,  S:N,    gW)
+		lattice(QSE, S:N, W) = lattice(QNW, S+1:gN, gW)
+		lattice(QNE, S:N, W) = lattice(QSW, gS:N-1, gW)
+
+		! E wall internal communication
+		src_Iy = Iy + c(CY, QE)
+		src_Ix = Ix + c(CX, QE)
+        lattice(QW,  S:N,   E) = lattice(QW,  S:N,   gW)[src_Iy, src_Ix]
+        lattice(QNW, S+1:N, E) = lattice(QNW, S+1:N, gW)[src_Iy, src_Ix]
+        lattice(QSW, S:N-1, E) = lattice(QSW, S:N-1, gW)[src_Iy, src_Ix]
+
+		! N wall internal communication
+		src_Iy = Iy + c(CY, QN)
+		src_Ix = Ix + c(CX, QN)
+        lattice(QS,  N, W:E  ) = lattice(QS,  gS, W:E  )[src_Iy, src_Ix]
+        lattice(QSW, N, W:E-1) = lattice(QSW, gS, W:E-1)[src_Iy, src_Ix]
+        lattice(QSE, N, W+1:E) = lattice(QSE, gS, W+1:E)[src_Iy, src_Ix]
+
+		! NE corner internal communication
+		src_Iy = Iy + c(CY, QNE)
+		src_Ix = Ix + c(CX, QNE)
+		lattice(QSW, N, E) = lattice(QSW, gS, gW)[src_Iy, src_Ix]
+
+	end subroutine
+
+	subroutine communication_IN()
+		integer :: src_Ix, src_Iy
+
+		! W wall internal communication
+		src_Iy = Iy + c(CY, QW)
+		src_Ix = Ix + c(CX, QW)
+        lattice(QE,  S:N,   W) = lattice(QE,  S:N,   gE)[src_Iy, src_Ix]
+        lattice(QNE, S+1:N, W) = lattice(QNE, S+1:N, gE)[src_Iy, src_Ix]
+        lattice(QSE, S:N-1, W) = lattice(QSE, S:N-1, gE)[src_Iy, src_Ix]
+
+		! E wall internal communication
+		src_Iy = Iy + c(CY, QE)
+		src_Ix = Ix + c(CX, QE)
+        lattice(QW,  S:N,   E) = lattice(QW,  S:N,   gW)[src_Iy, src_Ix]
+        lattice(QNW, S+1:N, E) = lattice(QNW, S+1:N, gW)[src_Iy, src_Ix]
+        lattice(QSW, S:N-1, E) = lattice(QSW, S:N-1, gW)[src_Iy, src_Ix]
+
+		! S wall internal communication
+		src_Iy = Iy + c(CY, QS)
+		src_Ix = Ix + c(CX, QS)
+        lattice(QN,  S, W:E  ) = lattice(QN,  gN, W:E  )[src_Iy, src_Ix]
+        lattice(QNE, S, W+1:E) = lattice(QNE, gN, W+1:E)[src_Iy, src_Ix]
+        lattice(QNW, S, W:E-1) = lattice(QNW, gN, W:E-1)[src_Iy, src_Ix]
+
+		! N wall internal communication
+		src_Iy = Iy + c(CY, QN)
+		src_Ix = Ix + c(CX, QN)
+        lattice(QS,  N, W:E  ) = lattice(QS,  gS, W:E  )[src_Iy, src_Ix]
+        lattice(QSW, N, W:E-1) = lattice(QSW, gS, W:E-1)[src_Iy, src_Ix]
+        lattice(QSE, N, W+1:E) = lattice(QSE, gS, W+1:E)[src_Iy, src_Ix]
+
+		! NE corner internal communication
+		src_Iy = Iy + c(CY, QNE)
+		src_Ix = Ix + c(CX, QNE)
+		lattice(QSW, N, E) = lattice(QSW, gS, gW)[src_Iy, src_Ix]
+
+		! NW corner internal communication
+		src_Iy = Iy + c(CY, QNW)
+		src_Ix = Ix + c(CX, QNW)
+        lattice(QSE, N, W) = lattice(QSE, gS, gE)[src_Iy, src_Ix]
+
+		! SW corner internal communication
+		src_Iy = Iy + c(CY, QSW)
+		src_Ix = Ix + c(CX, QSW)
+        lattice(QNE, S, W) = lattice(QNE, gN, gE)[src_Iy, src_Ix]
+
+		! SE corner internal communication
+		src_Iy = Iy + c(CY, QSE)
+		src_Ix = Ix + c(CX, QSE)
+		lattice(QNW, S, E) = lattice(QNW, gN, gW)[src_Iy, src_Ix]
+
+	end subroutine
 
 end module lbm_d2q9_solver

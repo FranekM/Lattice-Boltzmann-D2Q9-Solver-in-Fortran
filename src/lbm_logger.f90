@@ -1,6 +1,6 @@
-module lbm_d2q9_fast_logger
-	use lbm_d2q9_fast_global
-	use lbm_d2q9_fast_solver
+module lbm_d2q9_logger
+	use lbm_d2q9_global
+	use lbm_d2q9_solver
 	implicit none
 
 contains
@@ -90,4 +90,4 @@ contains
 
 	end subroutine
 
-end module lbm_d2q9_fast_logger
+end module lbm_d2q9_logger
