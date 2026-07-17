@@ -3,7 +3,7 @@
 FC = ifx
 FC_FLAGS = /nologo /Qcoarray /O3 /QxHost /Qipo /Qunroll
 
-OUT_DIR = out\optim_2
+OUT_DIR = out\optim_3
 OUT_DIRS =	       \
 	$(OUT_DIR)	   \
 	$(OUT_DIR)\1   \

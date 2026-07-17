@@ -31,11 +31,6 @@ program lbm_d2q9
 		call cpu_time(et)
 		total_communication_time = total_communication_time + (et - st)
 
-		call cpu_time(st)
-		call streaming_step()
-		call cpu_time(et)
-		total_streaming_time = total_streaming_time + (et - st)
-
 	end do
 	call cpu_time(total_end_time)
 	total_time = (total_end_time - total_start_time)

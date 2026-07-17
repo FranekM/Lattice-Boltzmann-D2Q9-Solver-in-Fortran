@@ -60,9 +60,7 @@ module lbm_d2q9_global
 
 	real :: total_time                  = 0
 	real :: total_collision_time        = 0
-	real :: total_streaming_time        = 0
 	real :: total_communication_time    = 0
-	real :: total_slide_time            = 0
 	real :: total_copy_time             = 0
 	real :: total_sync_time             = 0
 
@@ -86,11 +84,11 @@ module lbm_d2q9_global
 	real(dp), parameter :: OFFSET_QNW = (2.0_dp * weights(QNW) * c_dp(CX, QNW) * SPEED / cs2)
 	real(dp), parameter :: OFFSET_QNE = (2.0_dp * weights(QNE) * c_dp(CX, QNE) * SPEED / cs2)
 
-	character(32), parameter :: LOG_PARENT   = "out/optim_2"
+	character(32), parameter :: LOG_PARENT   = "out/optim_3"
 	character(32), parameter :: LOG_FILENAME = "re1000-"
 	character(32), parameter :: LOG_EXT      = ".tsv"
 
-	character(32), parameter :: STAT_FILENAME = "out/optim_2/stats"
+	character(32), parameter :: STAT_FILENAME = "out/optim_3/stats"
 	character(32), parameter :: STAT_EXT      = ".tsv"
 
 end module lbm_d2q9_global

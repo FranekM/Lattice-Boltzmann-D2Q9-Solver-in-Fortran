@@ -77,8 +77,6 @@ contains
 					this_image(),               char(9),                        &
 					mlups,                      char(9),                        &
 					total_time,                 char(9),                        &
-					total_streaming_time,       char(9),                        &
-					total_slide_time,           char(9),                        &
 					total_copy_time,            char(9),                        &
 					total_sync_time,            char(9),                        &
 					total_communication_time,   char(9),                        &

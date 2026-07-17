@@ -69,7 +69,7 @@ contains
                 ux = 0.0_dp
 
                 do q = 0, Nq-1
-                    f(q) = lattice(q, y, x)
+                    f(q) = lattice(q, y-c(CY, q), x-c(CX, q))
                     rho = rho + f(q)
                     uy = uy + f(q) * c_dp(CY, q)
                     ux = ux + f(q) * c_dp(CX, q)
@@ -84,31 +84,18 @@ contains
                 do q = 0, Nq-1
                     cu = c_dp(CY, q) * uy + c_dp(CX, q) * ux
                     feq = weights(q) * rho * (1.0_dp + 3.0_dp*cu + 4.5_dp*cu*cu + au2)
-                    lattice(q, y, x) = ONE_MINUS_OMEGA * f(q) + OMEGA * feq
+                    sbuffer(q, y, x) = ONE_MINUS_OMEGA * f(q) + OMEGA * feq
                 end do
             end do
         end do
-    end subroutine
 
-    subroutine streaming_step()
-        integer :: y, x, q
-
-        call cpu_time(st2)
-        do x = W, E
-	        do y = S, N
-		        do q = 0, Nq-1
-			        sbuffer(q, y, x) = lattice(q, y-c(CY, q), x-c(CX, q))
-		        end do
-	        end do
-        end do
-        call cpu_time(et2)
-        total_slide_time = total_slide_time + (et2 - st2)
-
-        call cpu_time(st2)
+		call cpu_time(st2)
         lattice = sbuffer
 	    call cpu_time(et2)
 	    total_copy_time = total_copy_time + (et2 - st2)
+
     end subroutine
+
 
     subroutine communication_step()
 
