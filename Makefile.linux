@@ -14,7 +14,7 @@ FC_FLAGS_2 = -coarray=distributed   \
              -ansi-alias
 
 
-OUT_DIR = out/optim_1
+OUT_DIR = out/optim_2
 OUT_DIRS =  	   \
 	$(OUT_DIR)	   \
 	$(OUT_DIR)/1   \

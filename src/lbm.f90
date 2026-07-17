@@ -17,10 +17,9 @@ program lbm_d2q9
 	do t = 0, TIME_STEPS
 
 		call cpu_time(st)
-		call streaming_step()
-		sync all
+		call collision_step()
 		call cpu_time(et)
-		total_streaming_time = total_streaming_time + (et - st)
+		total_collision_time = total_collision_time + (et - st)
 
 		call cpu_time(st)
 		call communication_step()
@@ -28,9 +27,10 @@ program lbm_d2q9
 		total_communication_time = total_communication_time + (et - st)
 
 		call cpu_time(st)
-		call collision_step()
+		call streaming_step()
+		sync all
 		call cpu_time(et)
-		total_collision_time = total_collision_time + (et - st)
+		total_streaming_time = total_streaming_time + (et - st)
 
 	end do
 	call cpu_time(total_end_time)
