@@ -3,7 +3,7 @@
 FC = ifx
 FC_FLAGS = /nologo /Qcoarray /O3 /QxHost /Qipo /Qunroll
 
-OUT_DIR = out\optim_3
+OUT_DIR = out\optim_4
 OUT_DIRS =	       \
 	$(OUT_DIR)	   \
 	$(OUT_DIR)\1   \
@@ -26,11 +26,7 @@ MOD_DIR = $(BIN_DIR)\mods
 
 TARGET  = $(BIN_DIR)\lbm.exe
 
-SRC = 						  \
-	$(SRC_DIR)/lbm_global.f90 \
-	$(SRC_DIR)/lbm_solver.f90 \
-	$(SRC_DIR)/lbm_logger.f90 \
-	$(SRC_DIR)/lbm.f90
+SRC = $(SRC_DIR)/lbm.f90
 
 OBJ = $(SRC:$(SRC_DIR)/%.f90=$(OBJ_DIR)/%.obj)
 
