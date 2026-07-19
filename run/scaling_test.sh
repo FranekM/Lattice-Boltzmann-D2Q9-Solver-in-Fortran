@@ -21,7 +21,7 @@ module load mpi/impi
 export FOR_COARRAY_CONFIG_FILE=./lbm.conf
 
 EXE=./lbm
-CONFIG=sliding-lid-300
+CONFIG=sliding-lid
 
 echo "Compiling program ..."
 

@@ -12,16 +12,16 @@
 
     cfg%Nx = 128
     cfg%Ny = 128
-    cfg%Nt = 5000
+    cfg%Nt = 200
     cfg%dpy = 0.0
     cfg%dpx = 0.0
 
     cfg%log%type = "field"
     cfg%log%file = "out/gwd/box_animation"
     cfg%log%ext  = ".tsv"
-    cfg%log%Nf   = 2500
+    cfg%log%Nf   = 200
 
-    cfg%debug_step = 1000
+    cfg%debug_step = 100
 
     ! Initial density: rho = 1 + eps*exp(-r^2/(2*sigma^2))
     cfg%rho%type = "gaussian"
@@ -55,16 +55,16 @@
 
     cfg%Nx = 128
     cfg%Ny = 128
-    cfg%Nt = 5000
+    cfg%Nt = 200
     cfg%dpy = 0.0
     cfg%dpx = 0.0
 
     cfg%log%type = "field"
     cfg%log%file = "out/gwd/tube_animation"
     cfg%log%ext  = ".tsv"
-    cfg%log%Nf   = 2500
+    cfg%log%Nf   = 200
 
-    cfg%debug_step = 1000
+    cfg%debug_step = 100
 
     ! Initial density: rho = 1 + eps*exp(-r^2/(2*sigma^2))
     cfg%rho%type = "gaussian"

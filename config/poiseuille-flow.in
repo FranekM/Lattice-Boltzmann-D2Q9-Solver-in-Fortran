@@ -12,14 +12,14 @@
 
     cfg%Nx = 64
     cfg%Ny = 64
-    cfg%Nt = 2000
+    cfg%Nt = 5000
     cfg%dpx = 0.001
     cfg%dpy = 0.0
 
     cfg%log%type = "field"
     cfg%log%file = "out/pf/field_animation"
     cfg%log%ext  = ".tsv"
-    cfg%log%Nf = 100
+    cfg%log%Nf   = 500
 
     cfg%debug_step = 1000
 
@@ -59,8 +59,8 @@
     cfg%log%type = "profile_y"
     cfg%log%file = "out/pf/profile_y_snapshots"
     cfg%log%ext  = ".tsv"
-    cfg%log%Nf = 5
-    cfg%log%x = 32
+    cfg%log%Nf   = 5
+    cfg%log%x    = 150
 
     cfg%debug_step = 10000
 

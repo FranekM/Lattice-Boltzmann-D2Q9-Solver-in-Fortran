@@ -7,8 +7,8 @@
 ! The sliding lid cavity field animation !
 ! -------------------------------------- !
 &experiment
-    cfg%family = "sliding-lid-300"
-    cfg%name   = "sliding-lid-300"
+    cfg%family = "sliding-lid"
+    cfg%name   = "sliding-lid"
 
     cfg%Nx = 300
     cfg%Ny = 300
@@ -16,12 +16,12 @@
     cfg%dpy = 0.0
     cfg%dpx = 0.0
 
-    cfg%log%type = "none"
-    cfg%log%file = "out/sl300/sliding-lid"
+    cfg%log%type = "field"
+    cfg%log%file = "out/sl/sliding_lid"
     cfg%log%ext  = ".tsv"
-    cfg%log%Nf   = 1
+    cfg%log%Nf   = 50
 
-    cfg%debug_step = 0
+    cfg%debug_step = 10000
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0

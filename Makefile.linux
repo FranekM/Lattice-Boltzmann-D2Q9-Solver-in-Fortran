@@ -1,11 +1,23 @@
+.PHONY: all clean run clean-out dirs
+
 FC = ifx
+
+OUT_DIR = out
+OUT_DIRS = 			\
+	$(OUT_DIR)		\
+	$(OUT_DIR)/swd 	\
+	$(OUT_DIR)/dwd 	\
+	$(OUT_DIR)/gwd 	\
+	$(OUT_DIR)/cf  	\
+	$(OUT_DIR)/pf  	\
+	$(OUT_DIR)/sl
 
 SRC_DIR = src
 OBJ_DIR = bin/obj
 MOD_DIR = bin/mods
 BIN_DIR = bin
 
-TARGET = lbm
+TARGET = $(BIN)/lbm
 
 FC_FLAGS = -module $(MOD_DIR)       \
            -coarray=distributed     \
@@ -35,6 +47,7 @@ all: dirs $(TARGET)
 dirs:
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(MOD_DIR)
+	mkdir -p $(OUT_DIRS)
 
 # Linking
 $(TARGET): $(OBJ)

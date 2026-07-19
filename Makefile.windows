@@ -1,11 +1,24 @@
+.PHONY: all clean run clean-out dirs
+
 FC = ifx
+
+OUT_DIR = out
+OUT_DIRS = 			\
+	$(OUT_DIR)		\
+	$(OUT_DIR)\swd 	\
+	$(OUT_DIR)\dwd 	\
+	$(OUT_DIR)\gwd 	\
+	$(OUT_DIR)\cf  	\
+	$(OUT_DIR)\pf  	\
+	$(OUT_DIR)\sl	\
+	$(OUT_DIR)\mw
 
 SRC_DIR = src
 OBJ_DIR = bin\obj
 MOD_DIR = bin\mods
 BIN_DIR = bin
 
-TARGET = lbm.exe
+TARGET = $(BIN_DIR)\lbm.exe
 
 FC_FLAGS = /nologo /module:$(MOD_DIR) /Qcoarray /O3 /QxHost /Qipo /Qunroll
 
@@ -24,7 +37,14 @@ SRC = 								\
 
 OBJ = $(SRC:$(SRC_DIR)/%.f90=$(OBJ_DIR)/%.obj)
 
-all: $(TARGET)
+
+all: dirs $(TARGET)
+
+# create directories if not exist
+dirs:
+	@if not exist "$(OBJ_DIR)" mkdir "$(OBJ_DIR)"
+	@if not exist "$(MOD_DIR)" mkdir "$(MOD_DIR)"
+	@for %%d in ($(OUT_DIRS)) do if not exist "%%d" mkdir "%%d"
 
 # Linking
 $(TARGET): $(OBJ)

@@ -1,3 +1,8 @@
+from matplotlib import rc
+rc("animation", html="jshtml", embed_limit=200)
+from IPython.display import Video, display
+
+from matplotlib.animation import FFMpegWriter
 import matplotlib.animation as anim
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,11 +14,13 @@ import re
 from pathlib import Path
 
 
-fps = 64
+fps = 24
 
 
 def init(config_file):
-    configs_raw = f90nml.read(f"../../config/{config_file}.in")['experiment']
+    path = Path(f"../config/{config_file}.in")
+    # print(path.absolute())
+    configs_raw = f90nml.read(path)['experiment']
     config = {}
     if len(configs_raw) > 1:
         for c in configs_raw:
@@ -54,7 +61,7 @@ def _frame_generator(filename):
 
 def log_frame_reader(cfg, home_dir):
     if home_dir is None:
-        home_dir = "../../"
+        home_dir = "../"
     path = Path(home_dir) / cfg["log"]["file"]
     ext = cfg["log"]["ext"]
     stem = path.name
@@ -89,7 +96,7 @@ def log_frame_reader(cfg, home_dir):
 
 def log_dataframe_reader(cfg, home_dir):
     if home_dir is None:
-        home_dir = "../../"
+        home_dir = "../"
     path = Path(home_dir) / cfg["log"]["file"]
     ext = cfg["log"]["ext"]
     stem = path.name
@@ -158,62 +165,120 @@ def field_animation(cfg, qv_step, qv_scale, home_dir=None):
             fig, update,
             frames   = frames,
             interval = 1000.0 / fps,
-            blit     = False
+            blit     = False,
+            cache_frame_data = False
     )
 
-    plt.title(f"{cfg['family']}: {cfg['name']}")
-    plt.show()
+    writer = FFMpegWriter(fps=30, codec="h264")
+    a.save(f"{cfg['name']}.mp4", writer=writer, dpi=300)
+    plt.close(fig)
+    display(Video(f"{cfg['name']}.mp4", embed=True))
 
-def field_streamplot(cfg, Np=1, t_list=None, density=0.5, home_dir=None):
-    frames = log_frame_reader(cfg, home_dir)
-    Nt = cfg['Nt']
-    Nx = cfg['Nx']
-    Ny = cfg['Ny']
 
-    if t_list is not None:
-        Np = len(t_list)
-        selected = np.array(t_list, dtype=int)
-    else:
-        selected = np.linspace(0, Nt - 1, Np, dtype=int)
+def field_streamplot(cfg, density=0.5, home_dir=None):
+    frame = next(log_frame_reader(cfg, home_dir))
 
-    cols = math.ceil(math.sqrt(Np))
-    rows = math.ceil(Np / cols)
+    Nx = cfg["Nx"]
+    Ny = cfg["Ny"]
 
-    fig, axes = plt.subplots(rows, cols, figsize=(3*cols, 3*rows))
-    axes = np.array(axes).flatten()
+    ux = frame["ux"].values.reshape(Ny, Nx)
+    uy = frame["uy"].values.reshape(Ny, Nx)
+    speed = np.sqrt(ux**2 + uy**2)
 
     x, y = np.meshgrid(np.arange(Nx), np.arange(Ny))
 
-    last_frame = -1
-    for i, frame_id in enumerate(selected):
-        for _ in range(frame_id - last_frame - 1):
-            next(frames)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.imshow(speed, cmap="Blues_r")
+    ax.streamplot(
+        x, y, ux, uy,
+        density=density,
+        linewidth=0.5,
+        color="black"
+    )
 
-        frame = next(frames)
-        last_frame = frame_id
-        ax = axes[i]
+    ax.invert_yaxis()
+    ax.set_aspect("equal")
+    ax.set_title(f"{cfg['family']}: {cfg['name']}")
 
-        ux = frame['ux'].values.reshape(Ny, Nx)
-        uy = frame['uy'].values.reshape(Ny, Nx)
-        speed = np.sqrt(ux**2 + uy**2)
-
-        ax.imshow(speed, cmap="Blues_r")
-        ax.streamplot(
-                x, y, ux, uy,
-                density = density,
-                linewidth= 0.5,
-                color = 'black'
-        )
-        ax.invert_yaxis()
-        ax.set_title(f"t={frame_id}")
-        ax.set_aspect("equal")
-
-    for ax in axes[Np:]:
-        ax.remove()
-
-    plt.suptitle(f"{cfg['family']}: {cfg['name']}")
     plt.tight_layout()
     plt.show()
+
+
+def field_streamplot_animation(
+        cfg,
+        density=0.5,
+        fps=30,
+        home_dir=None,
+        cmap="Blues_r"
+):
+    frames = log_frame_reader(cfg, home_dir)
+    first = next(frames)
+
+    Nx = cfg["Nx"]
+    Ny = cfg["Ny"]
+
+    x, y = np.meshgrid(np.arange(Nx), np.arange(Ny))
+
+    ux = first["ux"].values.reshape(Ny, Nx)
+    uy = first["uy"].values.reshape(Ny, Nx)
+    speed = np.sqrt(ux**2 + uy**2)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(speed, cmap=cmap)
+
+    sp = ax.streamplot(
+        x, y, ux, uy,
+        density=density,
+        linewidth=0.5,
+        color="black"
+    )
+
+    fig.colorbar(im, ax=ax)
+
+    ax.invert_yaxis()
+    ax.set_aspect("equal")
+
+
+    def update(frame):
+        ax.clear()
+        ux = frame["ux"].values.reshape(Ny, Nx)
+        uy = frame["uy"].values.reshape(Ny, Nx)
+        speed = np.sqrt(ux ** 2 + uy ** 2)
+
+        ax.imshow(speed, cmap=cmap)
+        ax.streamplot(
+                x, y, ux, uy,
+                density=density,
+                linewidth=0.5,
+                color="black"
+        )
+        ax.invert_yaxis()
+        ax.set_aspect("equal")
+
+        return ax.collections
+
+    ani = anim.FuncAnimation(
+        fig,
+        update,
+        frames=frames,
+        interval=1000 / fps,
+        blit=False,
+        cache_frame_data=False,
+    )
+
+    writer = FFMpegWriter(
+        fps=fps,
+        extra_args=[
+            "-crf", "18",
+            "-preset", "slow",
+            "-pix_fmt", "yuv420p",
+        ],
+    )
+
+    filename = f"{cfg['name']}_streamplot.mp4"
+    ani.save(filename, writer=writer, dpi=300)
+    plt.close(fig)
+    display(Video(filename, embed=True))
 
 
 def profile_animation(cfg, home_dir=None):
@@ -233,11 +298,15 @@ def profile_animation(cfg, home_dir=None):
             fig, update,
             frames   = frames,
             interval = 1000.0 / fps,
-            blit     = False
+            blit     = False,
+            cache_frame_data = False
     )
-    plt.title(f"{cfg['family']}: {cfg['name']}")
-    plt.grid()
-    plt.show()
+
+    writer = FFMpegWriter(fps=30, codec="h264")
+    a.save(f"{cfg['name']}.mp4", writer=writer, dpi=300)
+    plt.close(fig)
+    display(Video(f"{cfg['name']}.mp4", embed=True))
+
 
 def profile_snapshots(cfg, home_dir=None):
     for frame in log_frame_reader(cfg, home_dir):

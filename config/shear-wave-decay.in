@@ -105,14 +105,14 @@
 
     cfg%Nx = 64
     cfg%Ny = 64
-    cfg%Nt = 5000
+    cfg%Nt = 1000
 
     cfg%log%type = "field"
     cfg%log%file = "out/swd/field_animation"
     cfg%log%ext  = ".tsv"
     cfg%log%Nf   = 1000
 
-    cfg%debug_step = 1000
+    cfg%debug_step = 100
 
     cfg%rho%type = "constant"
     cfg%rho%const%value = 1.0
@@ -145,12 +145,14 @@
     cfg%Nx = 300
     cfg%Ny = 300
     cfg%Nt = 50000
+    cfg%dpy = 0.0
+    cfg%dpx = 0.0
 
     cfg%log%type = "profile_y"
     cfg%log%file = "out/swd/profile_y_snapshots"
     cfg%log%ext  = ".tsv"
-    cfg%log%Nf = 5
-    cfg%log%x = 64
+    cfg%log%Nf   = 5
+    cfg%log%x    = 64
 
     cfg%debug_step = 10000
 
@@ -228,12 +230,12 @@
 
     cfg%Nx = 64
     cfg%Ny = 64
-    cfg%Nt = 5000
+    cfg%Nt = 3500
 
     cfg%log%type = "profile_y"
     cfg%log%file = "out/swd/profile_y_animation"
     cfg%log%ext  = ".tsv"
-    cfg%log%Nf = 1000
+    cfg%log%Nf = 750
     cfg%log%x = 32
 
     cfg%debug_step = 1000
