@@ -71,23 +71,25 @@ program lbm_d2q9
 
 	! SIMULATION PARAMETERS
 
-	real(dp), parameter :: OMEGA            = 1.7_dp
-	real(dp), parameter :: ONE_MINUS_OMEGA  = 1.0_dp - 1.7_dp
+	real(dp), parameter :: OMEGA            = 1.2_dp
+	real(dp), parameter :: ONE_MINUS_OMEGA  = 1.0_dp - 1.2_dp
 	real(dp), parameter :: INIT_RHO         = 1.0_dp
-	real(dp), parameter :: SPEED            = 0.1_dp
+	real(dp), parameter :: SPEED            = 0.00965_dp
 
-	integer, parameter :: LATTICE_SIZE  = 300
-	integer, parameter :: TIME_STEPS    = 1000000
+	integer, parameter :: LATTICE_SIZE  = 11520
+	integer, parameter :: TIME_STEPS    = 500
 
 	real(dp), parameter :: OFFSET_QN  = (2.0_dp * weights(QN ) * c_dp(CX, QN ) * SPEED / cs2)
 	real(dp), parameter :: OFFSET_QNW = (2.0_dp * weights(QNW) * c_dp(CX, QNW) * SPEED / cs2)
 	real(dp), parameter :: OFFSET_QNE = (2.0_dp * weights(QNE) * c_dp(CX, QNE) * SPEED / cs2)
 
-	character(32), parameter :: LOG_PARENT   = "out/optim_4"
+	integer, parameter :: NUM_NODES = 9
+
+	character(32), parameter :: LOG_PARENT   = "out/scaling"
 	character(32), parameter :: LOG_FILENAME = "re1000-"
 	character(32), parameter :: LOG_EXT      = ".tsv"
 
-	character(32), parameter :: STAT_FILENAME = "out/optim_4/stats"
+	character(32), parameter :: STAT_FILENAME = "out/scaling/stats"
 	character(32), parameter :: STAT_EXT      = ".tsv"
 
 
@@ -690,14 +692,15 @@ program lbm_d2q9
 			mlups = mlups / 1000000_dp
 			mlups = mlups / total_time
 
-			write (log_unit, '(I0,A,I0,A,G,A,G,A,G,A,G,A,G,A,G,A,G,A,G)'),  &
-				num_images(),               char(9),                        &
-				this_image(),               char(9),                        &
-				mlups,                      char(9),                        &
-				total_time,                 char(9),                        &
-				total_copy_time,            char(9),                        &
-				total_sync_time,            char(9),                        &
-				total_communication_time,   char(9),                        &
+			write (log_unit, '(I0,A,I0,A,I0,A,G,A,G,A,G,A,G,A,G,A,G,A,G,A,G)'),  &
+				NUM_NODES,                  char(9),                             &
+				num_images(),               char(9),                             &
+				this_image(),               char(9),                             &
+				mlups,                      char(9),                             &
+				total_time,                 char(9),                             &
+				total_copy_time,            char(9),                             &
+				total_sync_time,            char(9),                             &
+				total_communication_time,   char(9),                             &
 				total_collision_time
 
 			close(log_unit)
@@ -708,10 +711,11 @@ program lbm_d2q9
 	! end log statistics
 	! start log results
 
-	write (log_file, '(A,A,I0,A,A,I0,A)'),  &
-	trim(LOG_PARENT),   "/",            &
-	num_images(),       "/",            &
-	trim(LOG_FILENAME), this_image(),   &
+	write (log_file, '(A,A,I0,A,I0,A,A,I0,A)'),  &
+	trim(LOG_PARENT),   "/",                     &
+	NUM_NODES,          "/",                     &
+	num_images(),       "/",                     &
+	trim(LOG_FILENAME), this_image(),            &
 	trim(LOG_EXT)
 
 	open(                       &
@@ -730,12 +734,12 @@ program lbm_d2q9
 			gy = (Iy - 1) * Ny + log_y
 			gx = (Ix - 1) * Nx + log_x
 			write(log_unit, '(ES12.5,A,I0,A,I0,A,I0,A,ES20.10,A,ES20.10,A,ES20.10)') &
-                            OMEGA,      char(9),        &
-							TIME_STEPS, char(9),        &
-							gy,         char(9),        &
-							gx,         char(9),        &
-							rho,        char(9),        &
-							uy,         char(9),        &
+                            OMEGA,      char(9),                                     &
+							TIME_STEPS, char(9),                                     &
+							gy,         char(9),                                     &
+							gx,         char(9),                                     &
+							rho,        char(9),                                     &
+							uy,         char(9),                                     &
 							ux
 		end do
 	end do
