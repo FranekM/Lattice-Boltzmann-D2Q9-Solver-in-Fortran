@@ -3,6 +3,7 @@
 FC = ifx
 FC_FLAGS = -coarray=distributed     \
            -free                    \
+           -unroll					\
            -O3                      \
 
 FC_FLAGS_2 = -coarray=distributed   \
@@ -27,7 +28,12 @@ OUT_DIRS =  	   \
 	$(OUT_DIR)/64  \
 	$(OUT_DIR)/81  \
 	$(OUT_DIR)/100 \
-	$(OUT_DIR)/121
+	$(OUT_DIR)/121 \
+	$(OUT_DIR)/144 \
+	$(OUT_DIR)/169 \
+	$(OUT_DIR)/196 \
+	$(OUT_DIR)/225 \
+	$(OUT_DIR)/256
 
 
 SRC_DIR = src
@@ -37,7 +43,7 @@ MOD_DIR = bin/mods
 TARGET  = $(BIN_DIR)/lbm
 
 
-SRC = $(SRC_FAST_DIR)/lbm.f90
+SRC = $(SRC_DIR)/lbm.f90
 
 OBJ = $(SRC:$(SRC_DIR)/%.f90=$(OBJ_DIR)/%.o)
 

@@ -16,7 +16,7 @@ if "%~1"=="" (
 set N=%~1
 
 set EXE=bin\lbm.exe
-set CONFIG=lbm.conf
+set CONFIG=run\lbm.conf
 
 set FOR_COARRAY_CONFIG_FILE=%CONFIG%
 

@@ -77,7 +77,7 @@ program lbm_d2q9
 	real(dp), parameter :: SPEED            = 0.1_dp
 
 	integer, parameter :: LATTICE_SIZE  = 300
-	integer, parameter :: TIME_STEPS    = 100000
+	integer, parameter :: TIME_STEPS    = 1000000
 
 	real(dp), parameter :: OFFSET_QN  = (2.0_dp * weights(QN ) * c_dp(CX, QN ) * SPEED / cs2)
 	real(dp), parameter :: OFFSET_QNW = (2.0_dp * weights(QNW) * c_dp(CX, QNW) * SPEED / cs2)

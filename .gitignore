@@ -3,6 +3,7 @@
 bin/
 out/
 tmp/
+eval/*.mp4
 src/py/__pycache__/
 intel oneAPI.exe.lnk
 lbm.exe

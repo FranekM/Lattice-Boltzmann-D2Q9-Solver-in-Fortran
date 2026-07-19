@@ -1,9 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=lbm-fast-scaling-test
 #SBATCH --partition=cpu_il
-#SBATCH --nodes=2
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=64
-#SBATCH --time=00:30:00
+#SBATCH --threads-per-core=1
+#SBATCH --time=05:00:00
 #SBATCH --mem-per-cpu=256mb
 #SBATCH --output=output.%j.out
 #SBATCH --error=error.%j.err
@@ -18,9 +19,9 @@ module purge
 module load compiler/intel
 module load mpi/impi
 
-export FOR_COARRAY_CONFIG_FILE=./lbm.conf
+export FOR_COARRAY_CONFIG_FILE=bin/lbm.conf
 
-EXE=../bin/lbm
+EXE=bin/lbm
 
 echo "Compiling program ..."
 
@@ -33,7 +34,7 @@ if [ $rc -ne 0 ]; then
     exit $rc
 fi
 
-for i in {1..11}; do
+for i in {1..16}; do
     n=$((i*i))
 
     echo "Running experiment with $n images"
@@ -45,7 +46,7 @@ for i in {1..11}; do
     rc=$?
     if [ $rc -ne 0 ]; then
         echo "Experiment with $n images failed (exit code $rc)"
-        exit $rc
+#        exit $rc
     fi
 done
 
