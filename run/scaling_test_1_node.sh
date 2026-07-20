@@ -2,7 +2,7 @@
 #SBATCH --job-name=lbm-fast-scaling-test
 #SBATCH --partition=cpu_il
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=64
+#SBATCH --ntasks-per-node=32
 #SBATCH --threads-per-core=1
 #SBATCH --time=02:00:00
 #SBATCH --mem-per-cpu=256mb
@@ -34,7 +34,7 @@ if [ $rc -ne 0 ]; then
     exit $rc
 fi
 
-for i in {1..8}; do
+for i in {1..5}; do
     n=$((i*i))
 
     echo "Running experiment with $n images"
