@@ -34,7 +34,7 @@ if [ $rc -ne 0 ]; then
     exit $rc
 fi
 
-for i in {2..8}; do
+for i in {1..8}; do
     n=$((i*i))
 
     echo "Running experiment with $n images"

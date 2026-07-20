@@ -71,23 +71,23 @@ program lbm_d2q9
 
 	! SIMULATION PARAMETERS
 
-	real(dp), parameter :: OMEGA            = 1.7_dp
-	real(dp), parameter :: ONE_MINUS_OMEGA  = 1.0_dp - 1.7_dp
+	real(dp), parameter :: OMEGA            = 1.041_dp
+	real(dp), parameter :: ONE_MINUS_OMEGA  = 1.0_dp - 1.041_dp
 	real(dp), parameter :: INIT_RHO         = 1.0_dp
 	real(dp), parameter :: SPEED            = 0.1_dp
 
-	integer, parameter :: LATTICE_SIZE  = 300
-	integer, parameter :: TIME_STEPS    = 1000000
+	integer, parameter :: LATTICE_SIZE  = 1536
+	integer, parameter :: TIME_STEPS    = 1000
 
 	real(dp), parameter :: OFFSET_QN  = (2.0_dp * weights(QN ) * c_dp(CX, QN ) * SPEED / cs2)
 	real(dp), parameter :: OFFSET_QNW = (2.0_dp * weights(QNW) * c_dp(CX, QNW) * SPEED / cs2)
 	real(dp), parameter :: OFFSET_QNE = (2.0_dp * weights(QNE) * c_dp(CX, QNE) * SPEED / cs2)
 
-	character(32), parameter :: LOG_PARENT   = "out/optim_4"
+	character(32), parameter :: LOG_PARENT   = "out/scaling"
 	character(32), parameter :: LOG_FILENAME = "re1000-"
 	character(32), parameter :: LOG_EXT      = ".tsv"
 
-	character(32), parameter :: STAT_FILENAME = "out/optim_4/stats"
+	character(32), parameter :: STAT_FILENAME = "out/scaling/stats"
 	character(32), parameter :: STAT_EXT      = ".tsv"
 
 
