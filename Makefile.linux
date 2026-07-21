@@ -33,8 +33,10 @@ OUT_DIRS =  	   \
 	$(OUT_DIR)/169 \
 	$(OUT_DIR)/196 \
 	$(OUT_DIR)/225 \
-	$(OUT_DIR)/256
-
+	$(OUT_DIR)/256 \
+	$(OUT_DIR)/289 \
+	$(OUT_DIR)/324 \
+	$(OUT_DIR)/361
 
 SRC_DIR = src
 BIN_DIR = bin
