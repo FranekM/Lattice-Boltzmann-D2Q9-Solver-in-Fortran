@@ -83,11 +83,11 @@ program lbm_d2q9
 	real(dp), parameter :: OFFSET_QNW = (2.0_dp * weights(QNW) * c_dp(CX, QNW) * SPEED / cs2)
 	real(dp), parameter :: OFFSET_QNE = (2.0_dp * weights(QNE) * c_dp(CX, QNE) * SPEED / cs2)
 
-	character(32), parameter :: LOG_PARENT   = "out/scaling"
+	character(32), parameter :: LOG_PARENT   = "out/scaling_periodic"
 	character(32), parameter :: LOG_FILENAME = "re1000-"
 	character(32), parameter :: LOG_EXT      = ".tsv"
 
-	character(32), parameter :: STAT_FILENAME = "out/scaling/stats"
+	character(32), parameter :: STAT_FILENAME = "out/scaling_periodic/stats"
 	character(32), parameter :: STAT_EXT      = ".tsv"
 
 
@@ -102,7 +102,7 @@ program lbm_d2q9
     real(dp), allocatable :: lattice(:, :, :)[:, :]   !! distribution function
     real(dp), allocatable :: sbuffer(:, :, :)         !! streaming buffer
 
-	integer :: t, q
+	integer :: t, q, y, x
 
 	! collision
     integer :: coll_x, coll_y, coll_q
@@ -119,6 +119,11 @@ program lbm_d2q9
 	integer :: log_y, log_x, gy, gx
     real(dp) :: mlups
 	character(256) :: log_file
+
+	! initial condition
+	real(dp) :: eps =  0.01_dp
+	real(dp) :: sigma = 10.0_dp
+	real(dp) :: gaussian_rho = 0.0_dp
 
 
 	! EXECUTION
@@ -155,6 +160,15 @@ program lbm_d2q9
     do q = 0, Nq-1
 		lattice(q, :, :) = weights(q) * INIT_RHO
     end do
+
+!	do x = 0, Nx
+!		do y = 0, Ny
+!			do q = 0, Nq-1
+!				gaussian_rho = INIT_RHO + eps * exp(-((x - (Nx/2))**2 + (y - (Ny/2))**2) / (2.0_dp * sigma**2))
+!				lattice(q, y, x) = weights(q) * gaussian_rho * (1.0_dp + 3.0_dp*cu + 4.5_dp*cu*cu)
+!			end do
+!		end do
+!	end do
 
 	! start simulation
 	call cpu_time(total_start_time)
@@ -286,377 +300,53 @@ program lbm_d2q9
 
 		call cpu_time(st)
 
-		if (num_images() == 1) then
-		    ! N wall
-			lattice(QS,  gN, W  :E  ) = lattice(QN,  N, W:E)
-			lattice(QSE, gN, W-1:E-1) = lattice(QNW, N, W:E)
-			lattice(QSW, gN, W+1:E+1) = lattice(QNE, N, W:E)
+	    ! W wall communication
+		src_Iy = modulo(Iy + c(CY, QW) - 1, Niy) + 1
+		src_Ix = modulo(Ix + c(CX, QW) - 1, Nix) + 1
+        lattice(QE,  S:N,   gW) = lattice(QE,  S:N,   E)[src_Iy, src_Ix]
+        lattice(QNE, S:N-1, gW) = lattice(QNE, S:N-1, E)[src_Iy, src_Ix]
+        lattice(QSE, S+1:N, gW) = lattice(QSE, S+1:N, E)[src_Iy, src_Ix]
 
-			! E wall
-			lattice(QW,  S  :N,   gE) = lattice(QE,  S:N, E)
-			lattice(QSW, S+1:N+1, gE) = lattice(QNE, S:N, E)
-			lattice(QNW, S-1:N-1, gE) = lattice(QSE, S:N, E)
+		! E wall communication
+		src_Iy = modulo(Iy + c(CY, QE) - 1, Niy) + 1
+		src_Ix = modulo(Ix + c(CX, QE) - 1, Nix) + 1
+        lattice(QW,  S:N,   gE) = lattice(QW,  S:N,   W)[src_Iy, src_Ix]
+        lattice(QNW, S:N-1, gE) = lattice(QNW, S:N-1, W)[src_Iy, src_Ix]
+        lattice(QSW, S+1:N, gE) = lattice(QSW, S+1:N, W)[src_Iy, src_Ix]
 
-			! S wall
-			lattice(QN,  gS, W  :E  ) = lattice(QS,  S, W:E)
-			lattice(QNE, gS, W-1:E-1) = lattice(QSW, S, W:E)
-			lattice(QNW, gS, W+1:E+1) = lattice(QSE, S, W:E)
+		! S wall communication
+		src_Iy = modulo(Iy + c(CY, QS) - 1, Niy) + 1
+		src_Ix = modulo(Ix + c(CX, QS) - 1, Nix) + 1
+        lattice(QN,  gS, W:E  ) = lattice(QN,  N, W:E  )[src_Iy, src_Ix]
+        lattice(QNE, gS, W:E-1) = lattice(QNE, N, W:E-1)[src_Iy, src_Ix]
+        lattice(QNW, gS, W+1:E) = lattice(QNW, N, W+1:E)[src_Iy, src_Ix]
 
-			! W wall
-			lattice(QE,  S  :N,   gW) = lattice(QW,  S:N, W)
-			lattice(QSE, S+1:N+1, gW) = lattice(QNW, S:N, W)
-			lattice(QNE, S-1:N-1, gW) = lattice(QSW, S:N, W)
+		! N wall communication
+		src_Iy = modulo(Iy + c(CY, QN) - 1, Niy) + 1
+		src_Ix = modulo(Ix + c(CX, QN) - 1, Nix) + 1
+        lattice(QS,  gN, W:E  ) = lattice(QS,  S, W:E  )[src_Iy, src_Ix]
+        lattice(QSW, gN, W+1:E) = lattice(QSW, S, W+1:E)[src_Iy, src_Ix]
+        lattice(QSE, gN, W:E-1) = lattice(QSE, S, W:E-1)[src_Iy, src_Ix]
 
-			! moving wall correction
-			do comm_x = W, E
-		        rho_wall = sum(lattice(:, gN, comm_x))
-				lattice(QS,  gN, comm_x) = lattice(QS,  gN, comm_x) - OFFSET_QN  * rho_wall
-		        lattice(QSE, gN, comm_x) = lattice(QSE, gN, comm_x) - OFFSET_QNW * rho_wall
-				lattice(QSW, gN, comm_x) = lattice(QSW, gN, comm_x) - OFFSET_QNE * rho_wall
-		    end do
+		! NE corner communication
+		src_Iy = modulo(Iy + c(CY, QNE) - 1, Niy) + 1
+		src_Ix = modulo(Ix + c(CX, QNE) - 1, Nix) + 1
+		lattice(QSW, gN, gE) = lattice(QSW, S, W)[src_Iy, src_Ix]
 
-	    else if (Iy == 1 .and. Ix /= 1 .and. Ix /= Nix) then
-		    ! S wall
-			lattice(QN,  gS, W  :E  ) = lattice(QS,  S, W:E)
-			lattice(QNE, gS, W-1:E-1) = lattice(QSW, S, W:E)
-			lattice(QNW, gS, W+1:E+1) = lattice(QSE, S, W:E)
+		! NW corner communication
+		src_Iy = modulo(Iy + c(CY, QNW) - 1, Niy) + 1
+		src_Ix = modulo(Ix + c(CX, QNW) - 1, Nix) + 1
+        lattice(QSE, gN, gW) = lattice(QSE, S, E)[src_Iy, src_Ix]
 
-			! W wall internal communication
-			src_Iy = Iy + c(CY, QW)
-			src_Ix = Ix + c(CX, QW)
-	        lattice(QE,  S:N,   gW) = lattice(QE,  S:N,   E)[src_Iy, src_Ix]
-	        lattice(QNE, S:N-1, gW) = lattice(QNE, S:N-1, E)[src_Iy, src_Ix]
-	        lattice(QSE, S+1:N, gW) = lattice(QSE, S+1:N, E)[src_Iy, src_Ix]
+		! SW corner communication
+		src_Iy = modulo(Iy + c(CY, QSW) - 1, Niy) + 1
+		src_Ix = modulo(Ix + c(CX, QSW) - 1, Nix) + 1
+        lattice(QNE, gS, gW) = lattice(QNE, N, E)[src_Iy, src_Ix]
 
-			! E wall internal communication
-			src_Iy = Iy + c(CY, QE)
-			src_Ix = Ix + c(CX, QE)
-	        lattice(QW,  S:N,   gE) = lattice(QW,  S:N,   W)[src_Iy, src_Ix]
-	        lattice(QNW, S:N-1, gE) = lattice(QNW, S:N-1, W)[src_Iy, src_Ix]
-	        lattice(QSW, S+1:N, gE) = lattice(QSW, S+1:N, W)[src_Iy, src_Ix]
-
-			! N wall internal communication
-			src_Iy = Iy + c(CY, QN)
-			src_Ix = Ix + c(CX, QN)
-	        lattice(QS,  gN, W:E  ) = lattice(QS,  S, W:E  )[src_Iy, src_Ix]
-	        lattice(QSW, gN, W+1:E) = lattice(QSW, S, W+1:E)[src_Iy, src_Ix]
-	        lattice(QSE, gN, W:E-1) = lattice(QSE, S, W:E-1)[src_Iy, src_Ix]
-
-			! NE corner internal communication
-			src_Iy = Iy + c(CY, QNE)
-			src_Ix = Ix + c(CX, QNE)
-			lattice(QSW, gN, gE) = lattice(QSW, S, W)[src_Iy, src_Ix]
-
-			! NW corner internal communication
-			src_Iy = Iy + c(CY, QNW)
-			src_Ix = Ix + c(CX, QNW)
-	        lattice(QSE, gN, gW) = lattice(QSE, S, E)[src_Iy, src_Ix]
-
-	    else if (Iy == Niy .and. Ix /= 1 .and. Ix /= Nix) then
-		    ! N wall
-			lattice(QS,  gN, W  :E  ) = lattice(QN,  N, W:E)
-			lattice(QSE, gN, W-1:E-1) = lattice(QNW, N, W:E)
-			lattice(QSW, gN, W+1:E+1) = lattice(QNE, N, W:E)
-
-			! moving wall correction
-			do comm_x = W, E
-		        rho_wall = sum(lattice(:, gN, comm_x))
-				lattice(QS,  gN, comm_x) = lattice(QS,  gN, comm_x) - OFFSET_QN  * rho_wall
-		        lattice(QSE, gN, comm_x) = lattice(QSE, gN, comm_x) - OFFSET_QNW * rho_wall
-				lattice(QSW, gN, comm_x) = lattice(QSW, gN, comm_x) - OFFSET_QNE * rho_wall
-		    end do
-
-			! W wall internal communication
-			src_Iy = Iy + c(CY, QW)
-			src_Ix = Ix + c(CX, QW)
-	        lattice(QE,  S:N,   gW) = lattice(QE,  S:N,   E)[src_Iy, src_Ix]
-	        lattice(QNE, S:N-1, gW) = lattice(QNE, S:N-1, E)[src_Iy, src_Ix]
-	        lattice(QSE, S+1:N, gW) = lattice(QSE, S+1:N, E)[src_Iy, src_Ix]
-
-			! E wall internal communication
-			src_Iy = Iy + c(CY, QE)
-			src_Ix = Ix + c(CX, QE)
-	        lattice(QW,  S:N,   gE) = lattice(QW,  S:N,   W)[src_Iy, src_Ix]
-	        lattice(QNW, S:N-1, gE) = lattice(QNW, S:N-1, W)[src_Iy, src_Ix]
-	        lattice(QSW, S+1:N, gE) = lattice(QSW, S+1:N, W)[src_Iy, src_Ix]
-
-			! S wall internal communication
-			src_Iy = Iy + c(CY, QS)
-			src_Ix = Ix + c(CX, QS)
-	        lattice(QN,  gS, W:E  ) = lattice(QN,  N, W:E  )[src_Iy, src_Ix]
-	        lattice(QNE, gS, W:E-1) = lattice(QNE, N, W:E-1)[src_Iy, src_Ix]
-	        lattice(QNW, gS, W+1:E) = lattice(QNW, N, W+1:E)[src_Iy, src_Ix]
-
-			! SW corner internal communication
-			src_Iy = Iy + c(CY, QSW)
-			src_Ix = Ix + c(CX, QSW)
-	        lattice(QNE, gS, gW) = lattice(QNE, N, E)[src_Iy, src_Ix]
-
-			! SE corner internal communication
-			src_Iy = Iy + c(CY, QSE)
-			src_Ix = Ix + c(CX, QSE)
-			lattice(QNW, gS, gE) = lattice(QNW, N, W)[src_Iy, src_Ix]
-
-	    else if (Ix == 1 .and. Iy /= 1 .and. Iy /= Niy) then
-		    ! W wall
-			lattice(QE,  S  :N,   gW) = lattice(QW,  S:N, W)
-			lattice(QSE, S+1:N+1, gW) = lattice(QNW, S:N, W)
-			lattice(QNE, S-1:N-1, gW) = lattice(QSW, S:N, W)
-
-			! E wall internal communication
-			src_Iy = Iy + c(CY, QE)
-			src_Ix = Ix + c(CX, QE)
-	        lattice(QW,  S:N,   gE) = lattice(QW,  S:N,   W)[src_Iy, src_Ix]
-	        lattice(QNW, S:N-1, gE) = lattice(QNW, S:N-1, W)[src_Iy, src_Ix]
-	        lattice(QSW, S+1:N, gE) = lattice(QSW, S+1:N, W)[src_Iy, src_Ix]
-
-			! S wall internal communication
-			src_Iy = Iy + c(CY, QS)
-			src_Ix = Ix + c(CX, QS)
-	        lattice(QN,  gS, W:E  ) = lattice(QN,  N, W:E  )[src_Iy, src_Ix]
-	        lattice(QNE, gS, W:E-1) = lattice(QNE, N, W:E-1)[src_Iy, src_Ix]
-	        lattice(QNW, gS, W+1:E) = lattice(QNW, N, W+1:E)[src_Iy, src_Ix]
-
-			! N wall internal communication
-			src_Iy = Iy + c(CY, QN)
-			src_Ix = Ix + c(CX, QN)
-	        lattice(QS,  gN, W:E  ) = lattice(QS,  S, W:E  )[src_Iy, src_Ix]
-	        lattice(QSW, gN, W+1:E) = lattice(QSW, S, W+1:E)[src_Iy, src_Ix]
-	        lattice(QSE, gN, W:E-1) = lattice(QSE, S, W:E-1)[src_Iy, src_Ix]
-
-			! NE corner internal communication
-			src_Iy = Iy + c(CY, QNE)
-			src_Ix = Ix + c(CX, QNE)
-			lattice(QSW, gN, gE) = lattice(QSW, S, W)[src_Iy, src_Ix]
-
-			! SE corner internal communication
-			src_Iy = Iy + c(CY, QSE)
-			src_Ix = Ix + c(CX, QSE)
-			lattice(QNW, gS, gE) = lattice(QNW, N, W)[src_Iy, src_Ix]
-
-	    else if (Ix == Nix .and. Iy /= 1 .and. Iy /= Niy) then
-		    ! E wall
-			lattice(QW,  S  :N,   gE) = lattice(QE,  S:N, E)
-			lattice(QSW, S+1:N+1, gE) = lattice(QNE, S:N, E)
-			lattice(QNW, S-1:N-1, gE) = lattice(QSE, S:N, E)
-
-			! W wall internal communication
-			src_Iy = Iy + c(CY, QW)
-			src_Ix = Ix + c(CX, QW)
-	        lattice(QE,  S:N,   gW) = lattice(QE,  S:N,   E)[src_Iy, src_Ix]
-	        lattice(QNE, S:N-1, gW) = lattice(QNE, S:N-1, E)[src_Iy, src_Ix]
-	        lattice(QSE, S+1:N, gW) = lattice(QSE, S+1:N, E)[src_Iy, src_Ix]
-
-			! S wall internal communication
-			src_Iy = Iy + c(CY, QS)
-			src_Ix = Ix + c(CX, QS)
-	        lattice(QN,  gS, W:E  ) = lattice(QN,  N, W:E  )[src_Iy, src_Ix]
-	        lattice(QNE, gS, W:E-1) = lattice(QNE, N, W:E-1)[src_Iy, src_Ix]
-	        lattice(QNW, gS, W+1:E) = lattice(QNW, N, W+1:E)[src_Iy, src_Ix]
-
-			! N wall internal communication
-			src_Iy = Iy + c(CY, QN)
-			src_Ix = Ix + c(CX, QN)
-	        lattice(QS,  gN, W:E  ) = lattice(QS,  S, W:E  )[src_Iy, src_Ix]
-	        lattice(QSW, gN, W+1:E) = lattice(QSW, S, W+1:E)[src_Iy, src_Ix]
-	        lattice(QSE, gN, W:E-1) = lattice(QSE, S, W:E-1)[src_Iy, src_Ix]
-
-			! NW corner internal communication
-			src_Iy = Iy + c(CY, QNW)
-			src_Ix = Ix + c(CX, QNW)
-	        lattice(QSE, gN, gW) = lattice(QSE, S, E)[src_Iy, src_Ix]
-
-			! SW corner internal communication
-			src_Iy = Iy + c(CY, QSW)
-			src_Ix = Ix + c(CX, QSW)
-	        lattice(QNE, gS, gW) = lattice(QNE, N, E)[src_Iy, src_Ix]
-
-	    else if (Iy == 1 .and. Ix == 1) then
-		    ! S wall
-			lattice(QN,  gS, W  :E  ) = lattice(QS,  S, W:E)
-			lattice(QNE, gS, W-1:E-1) = lattice(QSW, S, W:E)
-			lattice(QNW, gS, W+1:E+1) = lattice(QSE, S, W:E)
-
-			! W wall
-			lattice(QE,  S  :N,   gW) = lattice(QW,  S:N, W)
-			lattice(QSE, S+1:N+1, gW) = lattice(QNW, S:N, W)
-			lattice(QNE, S-1:N-1, gW) = lattice(QSW, S:N, W)
-
-			! E wall internal communication
-			src_Iy = Iy + c(CY, QE)
-			src_Ix = Ix + c(CX, QE)
-	        lattice(QW,  S:N,   gE) = lattice(QW,  S:N,   W)[src_Iy, src_Ix]
-	        lattice(QNW, S:N-1, gE) = lattice(QNW, S:N-1, W)[src_Iy, src_Ix]
-	        lattice(QSW, S+1:N, gE) = lattice(QSW, S+1:N, W)[src_Iy, src_Ix]
-
-			! N wall internal communication
-			src_Iy = Iy + c(CY, QN)
-			src_Ix = Ix + c(CX, QN)
-	        lattice(QS,  gN, W:E  ) = lattice(QS,  S, W:E  )[src_Iy, src_Ix]
-	        lattice(QSW, gN, W+1:E) = lattice(QSW, S, W+1:E)[src_Iy, src_Ix]
-	        lattice(QSE, gN, W:E-1) = lattice(QSE, S, W:E-1)[src_Iy, src_Ix]
-
-			! NE corner internal communication
-			src_Iy = Iy + c(CY, QNE)
-			src_Ix = Ix + c(CX, QNE)
-			lattice(QSW, gN, gE) = lattice(QSW, S, W)[src_Iy, src_Ix]
-
-	    else if (Iy == Niy .and. Ix == 1) then
-		    ! N wall
-			lattice(QS,  gN, W  :E  ) = lattice(QN,  N, W:E)
-			lattice(QSE, gN, W-1:E-1) = lattice(QNW, N, W:E)
-			lattice(QSW, gN, W+1:E+1) = lattice(QNE, N, W:E)
-
-			! W wall
-			lattice(QE,  S  :N,   gW) = lattice(QW,  S:N, W)
-			lattice(QSE, S+1:N+1, gW) = lattice(QNW, S:N, W)
-			lattice(QNE, S-1:N-1, gW) = lattice(QSW, S:N, W)
-
-			! moving wall correction
-			do comm_x = W, E
-		        rho_wall = sum(lattice(:, gN, comm_x))
-				lattice(QS,  gN, comm_x) = lattice(QS,  gN, comm_x) - OFFSET_QN  * rho_wall
-		        lattice(QSE, gN, comm_x) = lattice(QSE, gN, comm_x) - OFFSET_QNW * rho_wall
-				lattice(QSW, gN, comm_x) = lattice(QSW, gN, comm_x) - OFFSET_QNE * rho_wall
-		    end do
-
-			! E wall internal communication
-			src_Iy = Iy + c(CY, QE)
-			src_Ix = Ix + c(CX, QE)
-	        lattice(QW,  S:N,   gE) = lattice(QW,  S:N,   W)[src_Iy, src_Ix]
-	        lattice(QNW, S:N-1, gE) = lattice(QNW, S:N-1, W)[src_Iy, src_Ix]
-	        lattice(QSW, S+1:N, gE) = lattice(QSW, S+1:N, W)[src_Iy, src_Ix]
-
-			! S wall internal communication
-			src_Iy = Iy + c(CY, QS)
-			src_Ix = Ix + c(CX, QS)
-	        lattice(QN,  gS, W:E  ) = lattice(QN,  N, W:E  )[src_Iy, src_Ix]
-	        lattice(QNE, gS, W:E-1) = lattice(QNE, N, W:E-1)[src_Iy, src_Ix]
-	        lattice(QNW, gS, W+1:E) = lattice(QNW, N, W+1:E)[src_Iy, src_Ix]
-
-			! SE corner internal communication
-			src_Iy = Iy + c(CY, QSE)
-			src_Ix = Ix + c(CX, QSE)
-			lattice(QNW, gS, gE) = lattice(QNW, N, W)[src_Iy, src_Ix]
-
-	    else if (Iy == Niy .and. Ix == Nix) then
-		    ! N wall
-			lattice(QS,  gN, W  :E  ) = lattice(QN,  N, W:E)
-			lattice(QSE, gN, W-1:E-1) = lattice(QNW, N, W:E)
-			lattice(QSW, gN, W+1:E+1) = lattice(QNE, N, W:E)
-
-			! E wall
-			lattice(QW,  S  :N,   gE) = lattice(QE,  S:N, E)
-			lattice(QSW, S+1:N+1, gE) = lattice(QNE, S:N, E)
-			lattice(QNW, S-1:N-1, gE) = lattice(QSE, S:N, E)
-
-			! moving wall correction
-			do comm_x = W, E
-		        rho_wall = sum(lattice(:, gN, comm_x))
-				lattice(QS,  gN, comm_x) = lattice(QS,  gN, comm_x) - OFFSET_QN  * rho_wall
-		        lattice(QSE, gN, comm_x) = lattice(QSE, gN, comm_x) - OFFSET_QNW * rho_wall
-				lattice(QSW, gN, comm_x) = lattice(QSW, gN, comm_x) - OFFSET_QNE * rho_wall
-		    end do
-
-			! W wall internal communication
-			src_Iy = Iy + c(CY, QW)
-			src_Ix = Ix + c(CX, QW)
-	        lattice(QE,  S:N,   gW) = lattice(QE,  S:N,   E)[src_Iy, src_Ix]
-	        lattice(QNE, S:N-1, gW) = lattice(QNE, S:N-1, E)[src_Iy, src_Ix]
-	        lattice(QSE, S+1:N, gW) = lattice(QSE, S+1:N, E)[src_Iy, src_Ix]
-
-			! S wall internal communication
-			src_Iy = Iy + c(CY, QS)
-			src_Ix = Ix + c(CX, QS)
-	        lattice(QN,  gS, W:E  ) = lattice(QN,  N, W:E  )[src_Iy, src_Ix]
-	        lattice(QNE, gS, W:E-1) = lattice(QNE, N, W:E-1)[src_Iy, src_Ix]
-	        lattice(QNW, gS, W+1:E) = lattice(QNW, N, W+1:E)[src_Iy, src_Ix]
-
-			! SW corner internal communication
-			src_Iy = Iy + c(CY, QSW)
-			src_Ix = Ix + c(CX, QSW)
-	        lattice(QNE, gS, gW) = lattice(QNE, N, E)[src_Iy, src_Ix]
-
-		else if (Iy == 1 .and. Ix == Nix) then
-			! S wall
-			lattice(QN,  gS, W  :E  ) = lattice(QS,  S, W:E)
-			lattice(QNE, gS, W-1:E-1) = lattice(QSW, S, W:E)
-			lattice(QNW, gS, W+1:E+1) = lattice(QSE, S, W:E)
-
-			! E wall
-			lattice(QW,  S  :N,   gE) = lattice(QE,  S:N, E)
-			lattice(QSW, S+1:N+1, gE) = lattice(QNE, S:N, E)
-			lattice(QNW, S-1:N-1, gE) = lattice(QSE, S:N, E)
-
-			! W wall internal communication
-			src_Iy = Iy + c(CY, QW)
-			src_Ix = Ix + c(CX, QW)
-	        lattice(QE,  S:N,   gW) = lattice(QE,  S:N,   E)[src_Iy, src_Ix]
-	        lattice(QNE, S:N-1, gW) = lattice(QNE, S:N-1, E)[src_Iy, src_Ix]
-	        lattice(QSE, S+1:N, gW) = lattice(QSE, S+1:N, E)[src_Iy, src_Ix]
-
-			! N wall internal communication
-			src_Iy = Iy + c(CY, QN)
-			src_Ix = Ix + c(CX, QN)
-	        lattice(QS,  gN, W:E  ) = lattice(QS,  S, W:E  )[src_Iy, src_Ix]
-	        lattice(QSW, gN, W+1:E) = lattice(QSW, S, W+1:E)[src_Iy, src_Ix]
-	        lattice(QSE, gN, W:E-1) = lattice(QSE, S, W:E-1)[src_Iy, src_Ix]
-
-			! NW corner internal communication
-			src_Iy = Iy + c(CY, QNW)
-			src_Ix = Ix + c(CX, QNW)
-	        lattice(QSE, gN, gW) = lattice(QSE, S, E)[src_Iy, src_Ix]
-
-	    else
-		    ! W wall internal communication
-			src_Iy = Iy + c(CY, QW)
-			src_Ix = Ix + c(CX, QW)
-	        lattice(QE,  S:N,   gW) = lattice(QE,  S:N,   E)[src_Iy, src_Ix]
-	        lattice(QNE, S:N-1, gW) = lattice(QNE, S:N-1, E)[src_Iy, src_Ix]
-	        lattice(QSE, S+1:N, gW) = lattice(QSE, S+1:N, E)[src_Iy, src_Ix]
-
-			! E wall internal communication
-			src_Iy = Iy + c(CY, QE)
-			src_Ix = Ix + c(CX, QE)
-	        lattice(QW,  S:N,   gE) = lattice(QW,  S:N,   W)[src_Iy, src_Ix]
-	        lattice(QNW, S:N-1, gE) = lattice(QNW, S:N-1, W)[src_Iy, src_Ix]
-	        lattice(QSW, S+1:N, gE) = lattice(QSW, S+1:N, W)[src_Iy, src_Ix]
-
-			! S wall internal communication
-			src_Iy = Iy + c(CY, QS)
-			src_Ix = Ix + c(CX, QS)
-	        lattice(QN,  gS, W:E  ) = lattice(QN,  N, W:E  )[src_Iy, src_Ix]
-	        lattice(QNE, gS, W:E-1) = lattice(QNE, N, W:E-1)[src_Iy, src_Ix]
-	        lattice(QNW, gS, W+1:E) = lattice(QNW, N, W+1:E)[src_Iy, src_Ix]
-
-			! N wall internal communication
-			src_Iy = Iy + c(CY, QN)
-			src_Ix = Ix + c(CX, QN)
-	        lattice(QS,  gN, W:E  ) = lattice(QS,  S, W:E  )[src_Iy, src_Ix]
-	        lattice(QSW, gN, W+1:E) = lattice(QSW, S, W+1:E)[src_Iy, src_Ix]
-	        lattice(QSE, gN, W:E-1) = lattice(QSE, S, W:E-1)[src_Iy, src_Ix]
-
-			! NE corner internal communication
-			src_Iy = Iy + c(CY, QNE)
-			src_Ix = Ix + c(CX, QNE)
-			lattice(QSW, gN, gE) = lattice(QSW, S, W)[src_Iy, src_Ix]
-
-			! NW corner internal communication
-			src_Iy = Iy + c(CY, QNW)
-			src_Ix = Ix + c(CX, QNW)
-	        lattice(QSE, gN, gW) = lattice(QSE, S, E)[src_Iy, src_Ix]
-
-			! SW corner internal communication
-			src_Iy = Iy + c(CY, QSW)
-			src_Ix = Ix + c(CX, QSW)
-	        lattice(QNE, gS, gW) = lattice(QNE, N, E)[src_Iy, src_Ix]
-
-			! SE corner internal communication
-			src_Iy = Iy + c(CY, QSE)
-			src_Ix = Ix + c(CX, QSE)
-			lattice(QNW, gS, gE) = lattice(QNW, N, W)[src_Iy, src_Ix]
-
-	    end if
+		! SE corner communication
+		src_Iy = modulo(Iy + c(CY, QSE) - 1, Niy) + 1
+		src_Ix = modulo(Ix + c(CX, QSE) - 1, Nix) + 1
+		lattice(QNW, gS, gE) = lattice(QNW, N, W)[src_Iy, src_Ix]
 
 		call cpu_time(et)
 		total_communication_time = total_communication_time + (et - st)

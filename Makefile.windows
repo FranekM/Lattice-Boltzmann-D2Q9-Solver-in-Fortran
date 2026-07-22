@@ -3,20 +3,11 @@
 FC = ifx
 FC_FLAGS = /nologo /Qcoarray /O3 /QxHost /Qipo /Qunroll
 
-OUT_DIR = out\optim_4
+OUT_DIR = out\scaling_periodic
 OUT_DIRS =	       \
 	$(OUT_DIR)	   \
 	$(OUT_DIR)\1   \
-	$(OUT_DIR)\4   \
-	$(OUT_DIR)\9   \
-	$(OUT_DIR)\16  \
-	$(OUT_DIR)\25  \
-	$(OUT_DIR)\36  \
-	$(OUT_DIR)\49  \
-	$(OUT_DIR)\64  \
-	$(OUT_DIR)\81  \
-	$(OUT_DIR)\100 \
-	$(OUT_DIR)\121 \
+	$(OUT_DIR)\4
 
 
 SRC_DIR = src
